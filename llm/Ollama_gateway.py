@@ -279,7 +279,7 @@ def verilog_generation(query):
         message = HumanMessage(content=query)
         response = verilogllm.invoke([message])
         
-        answer = response.content.strip()
+        answer = response
         
         if not answer:
             raise ValueError("Generated response is empty or invalid")
@@ -293,4 +293,4 @@ def verilog_generation(query):
 
 
 if __name__ == "__main__":
-    uvicorn.run("RAG:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8001, reload=True)

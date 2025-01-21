@@ -1,0 +1,112 @@
+{
+  "creator": "Yosys 0.33 (git sha1 2584903a060)",
+  "modules": {
+    "ecoli_and_gate": {
+      "attributes": {
+        "top": "00000000000000000000000000000001",
+        "src": "/home/lexo/Desktop/Practica/App/cello/library/verilogs/temp_5e30721e69ab4af4ab87a2bdb6a3ded2.v:1.1-3.12"
+      },
+      "ports": {
+        "tetR": {
+          "direction": "input",
+          "bits": [ 2 ]
+        },
+        "lacI": {
+          "direction": "input",
+          "bits": [ 3 ]
+        },
+        "out": {
+          "direction": "output",
+          "bits": [ 4 ]
+        }
+      },
+      "cells": {
+        "$abc$80$auto$blifparse.cc:386:parse_blif$81": {
+          "hide_name": 1,
+          "type": "$_NOT_",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 2 ],
+            "Y": [ 5 ]
+          }
+        },
+        "$abc$80$auto$blifparse.cc:386:parse_blif$82": {
+          "hide_name": 1,
+          "type": "$_NOT_",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 3 ],
+            "Y": [ 6 ]
+          }
+        },
+        "$abc$80$auto$blifparse.cc:386:parse_blif$83": {
+          "hide_name": 1,
+          "type": "$_NOR_",
+          "parameters": {
+          },
+          "attributes": {
+          },
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 5 ],
+            "B": [ 6 ],
+            "Y": [ 4 ]
+          }
+        }
+      },
+      "netnames": {
+        "$abc$80$new_n4_": {
+          "hide_name": 1,
+          "bits": [ 5 ],
+          "attributes": {
+          }
+        },
+        "$abc$80$new_n5_": {
+          "hide_name": 1,
+          "bits": [ 6 ],
+          "attributes": {
+          }
+        },
+        "lacI": {
+          "hide_name": 0,
+          "bits": [ 3 ],
+          "attributes": {
+            "src": "/home/lexo/Desktop/Practica/App/cello/library/verilogs/temp_5e30721e69ab4af4ab87a2bdb6a3ded2.v:1.51-1.55"
+          }
+        },
+        "out": {
+          "hide_name": 0,
+          "bits": [ 4 ],
+          "attributes": {
+            "src": "/home/lexo/Desktop/Practica/App/cello/library/verilogs/temp_5e30721e69ab4af4ab87a2bdb6a3ded2.v:1.69-1.72"
+          }
+        },
+        "tetR": {
+          "hide_name": 0,
+          "bits": [ 2 ],
+          "attributes": {
+            "src": "/home/lexo/Desktop/Practica/App/cello/library/verilogs/temp_5e30721e69ab4af4ab87a2bdb6a3ded2.v:1.34-1.38"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import requests
 import os
-from llm import RAG
+from llm import Ollama_gateway
 import subprocess
 import re
 
@@ -49,7 +49,7 @@ class ChatApp:
 
         print("Bot: Automatically selecting UCF based on input...")
         try:
-            response = RAG.chat_response(str(input_message))
+            response = Ollama_gateway.chat_response(str(input_message))
             selected_ucf_name = response
             
             # Match UCF name to ID
@@ -94,7 +94,7 @@ class ChatApp:
     def generate_verilog(self, prompt):
         """Generate Verilog code via API and extract module definition."""
         try:
-            response = RAG.verilog_generation(str(prompt))
+            response = Ollama_gateway.verilog_generation(str(prompt))
             responseText = response.content
             """ print(f"Bot: Generated Response:\n{responseText}")"""
 
@@ -155,7 +155,6 @@ class ChatApp:
         except Exception as e:
             print(f"Error processing with Cello: {e}")
 
-    # TODO: achieve this functionality with the email api (not created yet)
     def download_file(self, folder_name, file):
         """Download a file from the server."""
         url = f"http://localhost:8000/v1/outputs/{folder_name}/{file}"

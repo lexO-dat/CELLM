@@ -1,0 +1,13 @@
+Scores...
+LuxR_sensor,CinR_sensor,BetI,VanR,PhlF,YFP_reporter_2
+3.00e-02,5.00e-03,2.83e+00,6.17e+00,6.68e-03,6.68e-03
+3.00e-02,3.18e+00,2.83e+00,4.35e-02,6.73e-03,6.73e-03
+2.23e+00,5.00e-03,4.77e-02,6.17e+00,7.04e-03,7.04e-03
+2.23e+00,3.18e+00,4.77e-02,4.35e-02,7.45e+00,7.45e+00
+""
+Binary...
+LuxR_sensor_I/O,CinR_sensor_I/O,BetI_I/O,VanR_I/O,PhlF_I/O,YFP_reporter_2_I/O
+0,0,1,1,0,0
+0,1,1,0,0,0
+1,0,0,1,0,0
+1,1,0,0,1,1
