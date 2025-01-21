@@ -17,8 +17,8 @@ import re
 # API
 # -------------------------------
 app = FastAPI(
-    title="Ollama ucfRAG API",
-    description="API for Ollama ucfRAG model process",
+    title="Ollama gateway API",
+    description="API for Ollama models",
     version="1.0"
 )
 
@@ -64,8 +64,6 @@ async def run(request: Request) -> Dict[str, str]:
     except Exception as e:
         print(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 @app.get("/v1/rag/health")
 async def health_check():
