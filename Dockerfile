@@ -1,6 +1,12 @@
-FROM python:3.11-slim
+FROM python:3.9-slim-bullseye
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    golang \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-COPY requirements.txt .
+COPY . /app
+
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+
 CMD ["python", "cli.py"]
