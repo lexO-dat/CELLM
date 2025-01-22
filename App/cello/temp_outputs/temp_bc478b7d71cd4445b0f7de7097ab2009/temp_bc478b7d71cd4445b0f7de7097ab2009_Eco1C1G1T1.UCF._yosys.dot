@@ -1,0 +1,32 @@
+digraph "Ecoli_NEB10" {
+label="Ecoli_NEB10";
+rankdir="LR";
+remincross=true;
+n7 [ shape=octagon, label="AraC\nPRIMARY_INPUT\nTetR_sensor", fontcolor="black" ];
+n8 [ shape=octagon, label="LacI\nPRIMARY_INPUT\nAraC_sensor", fontcolor="black" ];
+n9 [ shape=octagon, label="TetR\nPRIMARY_INPUT\nLacI_sensor", fontcolor="black" ];
+n10 [ shape=octagon, label="YFP1\nPRIMARY_OUTPUT\nYFP_reporter", fontcolor="black" ];
+n11 [ shape=octagon, label="YFP2\nPRIMARY_OUTPUT\nYFP_reporter_2", fontcolor="black" ];
+c14 [ shape=record, label="{{<p12> A}|$83\nNOT\nA1_AmtR|{<p13> Y}}",  ];
+c15 [ shape=record, label="{{<p12> A}|$84\nNOT\nH1_HlyIIR|{<p13> Y}}",  ];
+c16 [ shape=record, label="{{<p12> A}|$85\nNOT\nQ2_QacR|{<p13> Y}}",  ];
+c18 [ shape=record, label="{{<p12> A|<p17> B}|$86\nNOR\nE1_BetI|{<p13> Y}}",  ];
+c19 [ shape=record, label="{{<p12> A}|$87\nNOT\nI1_IcaRA|{<p13> Y}}",  ];
+c20 [ shape=record, label="{{<p12> A|<p17> B}|$88\nNOR\nS4_SrpR|{<p13> Y}}",  ];
+c21 [ shape=record, label="{{<p12> A|<p17> B}|$89\nNOR\nL1_LitR|{<p13> Y}}",  ];
+c22 [ shape=record, label="{{<p12> A|<p17> B}|$90\nNOR\nB3_BM3R1|{<p13> Y}}",  ];
+c19:p13:e -> c21:p17:w [color="black", fontcolor="black", label=""];
+c18:p13:e -> n10:w [color="black", fontcolor="black", label=""];
+n10:e -> c19:p12:w [color="black", fontcolor="black", label=""];
+n10:e -> c20:p17:w [color="black", fontcolor="black", label=""];
+c22:p13:e -> n11:w [color="black", fontcolor="black", label=""];
+c20:p13:e -> c22:p12:w [color="black", fontcolor="black", label=""];
+c21:p13:e -> c22:p17:w [color="black", fontcolor="black", label=""];
+c14:p13:e -> c18:p12:w [color="black", fontcolor="black", label=""];
+c15:p13:e -> c18:p17:w [color="black", fontcolor="black", label=""];
+c16:p13:e -> c21:p12:w [color="black", fontcolor="black", label=""];
+n7:e -> c16:p12:w [color="black", fontcolor="black", label=""];
+n7:e -> c20:p12:w [color="black", fontcolor="black", label=""];
+n8:e -> c15:p12:w [color="black", fontcolor="black", label=""];
+n9:e -> c14:p12:w [color="black", fontcolor="black", label=""];
+}

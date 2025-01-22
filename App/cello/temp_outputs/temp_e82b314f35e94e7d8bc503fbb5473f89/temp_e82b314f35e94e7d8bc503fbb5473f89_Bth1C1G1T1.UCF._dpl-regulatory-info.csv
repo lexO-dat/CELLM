@@ -1,0 +1,4 @@
+from_partname,type,to_partname,arrowhead_length,linestyle,linewidth,color
+M1,Repression,PM1,3,-,,0.23;0.66;0.88
+M3,Repression,PM3,3,-,,0.56;0.78;0.24
+M5,Repression,PM5,3,-,,0.33;0.33;0.64

@@ -1,18 +1,11 @@
-/* 
- Nand gate
-*/
+/*Nand gate*/
 module nand_gate
-(
- a,
- b,
- out
- );
+(a,b,out);
+  input a;
+  input b;
 
-   input a;
-   input b;
+  output out;
 
-   output out;
-
-   assign out = ~(a & b);
+  assign out = ~(a & b);
  
 endmodule // nand_gate

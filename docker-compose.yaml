@@ -1,15 +1,36 @@
-version: '1'
 services:
-  rag-api:
-    build: ./llm
+  ollama:
+    build: ./llm/ollama
+    ports:
+      - "11434:11434"
+    networks:
+      llm_net:
+        ipv4_address: 172.28.0.2
+  ollama-gateway:
+    build: ./llm/
     ports:
       - "8001:8001"
-  cello-api:
+    networks:
+      llm_net:
+        ipv4_address: 172.28.0.3
+
+  cello:
     build: ./App/cello
     ports:
       - "8000:8000"
-  frontend:
-    build: ./App/front/chat
-    ports:
-      - "3000:80"
-  
+    networks:
+      llm_net:
+        ipv4_address: 172.28.0.4
+    cli: 
+      build: ./
+      networks:
+        llm_net:
+          ipv4_address: 172.28.0.5
+
+networks:
+  llm_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1

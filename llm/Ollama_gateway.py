@@ -86,7 +86,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Main Ollama model configuration
 # -------------------------------
 llm = ChatOllama(
-    base_url="http://localhost:11434",
+    base_url="http://172.28.0.2:11434",
     model="llama3.1:8b",
     system="""
         You are a specialized assistant designed to select the most appropriate UCF (User Constraint File) for genetic circuit design in Cello. Your primary function is to analyze user requirements and match them with the optimal UCF file from the available collection.
@@ -133,7 +133,7 @@ llm = ChatOllama(
 # Verilog Ollama model configuration
 # -------------------------------
 verilogllm = ChatOllama(
-                base_url="http://localhost:11434",
+                base_url="http://172.28.0.2:11434",
                 model="custom-llama-8b",
                 system="""
                 You are an AI assistant that generates CELLO-compatible Verilog code for genetic circuits. Generate only the Verilog code without explanations unless specifically requested. For logic function requests, return a single `module top (...) endmodule` block containing inputs, outputs, and assign statements.
@@ -215,7 +215,7 @@ verilogllm = ChatOllama(
 # Ollama Embedding Model Configuration
 # -------------------------------
 embeddings = OllamaEmbeddings(
-    base_url="http://localhost:11434",
+    base_url="http://172.28.0.2:11434",
     model="mxbai-embed-large:latest"
 )
 
@@ -278,8 +278,8 @@ def verilog_generation(query):
     try:
         message = HumanMessage(content=query)
         response = verilogllm.invoke([message])
-        
-        answer = response
+        # print(f"Verilog generation response: {response}")
+        answer = response.content
         
         if not answer:
             raise ValueError("Generated response is empty or invalid")

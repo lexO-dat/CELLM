@@ -72,7 +72,7 @@ class ChatApp:
             print("Message cannot be empty.")
             return
 
-        self.messages.append({"text": input_message, "isUser": True})
+        # self.messages.append({"text": input_message, "isUser": True})
         print(f"\nYou: {input_message}")
 
         self.auto_select_ucf(input_message)
@@ -120,7 +120,7 @@ class ChatApp:
         """Process Verilog code with Cello API."""
         try:
             cello_response = requests.post(
-                "http://localhost:8000/v1/run",
+                "http://172.28.0.4:8000/v1/run",
                 json={
                     "verilogCode": verilog_code,
                     "ucfIndex": self.selected_ucf,
