@@ -1,44 +1,39 @@
 # Eco1C2G2T2 inputs
 Input Sensors:
-- LacI_sensor
-- TetR_sensor
-- LuxR_sensor
-- CinR_sensor
+- Eco1C2G2T2 input: LacI_sensor
+- Eco1C2G2T2 input: TetR_sensor
+- Eco1C2G2T2 input: LuxR_sensor
+- Eco1C2G2T2 input: CinR_sensor
 
 # Eco1C2G2T2 outputs
 Output Sensors:
-- YFP_reporter
+- Eco1C2G2T2 output: YFP_reporter
 
 # Eco1C2G2T2 description
-- TetR homologs: PhlF, SrpR, BM3R1, HlyIIR, BetI, AmtR, AmeR, QacR, IcaRA
+- Eco1C2G2T2 description: TetR homologs: PhlF, SrpR, BM3R1, HlyIIR, BetI, AmtR, AmeR, QacR, IcaRA
 
 # Eco1C2G2T2 organism
 Organism:
-- Escherichia coli NEB 10-beta
+- Eco1C2G2T2 organism: Escherichia coli NEB 10-beta
 
 # Eco1C2G2T2 genome
 Genome:
-- NEB 10 \u2206(ara-leu) 7697 araD139 fhuA \u2206lacX74 galK16 galE15 e14- \u03c680dlacZ\u2206M15  recA1 relA1 endA1 nupG  rpsL (StrR) rph spoT1 \u2206(mrr-hsdRMS-mcrBC)
+- Eco1C2G2T2 genome: NEB 10 \u2206(ara-leu) 7697 araD139 fhuA \u2206lacX74 galK16 galE15 e14- \u03c680dlacZ\u2206M15  recA1 relA1 endA1 nupG  rpsL (StrR) rph spoT1 \u2206(mrr-hsdRMS-mcrBC)
 
 # Eco1C2G2T2 media
 Media:
-- M9 minimal media composed of M9 media salts (6.78 g/L Na2HPO4, 3 g/L KH2PO4, 1 g/L NH4Cl, 0.5 g/L NaCl, 0.34 g/L thiamine hydrochloride, 0.4% D-glucose, 0.2% Casamino acids, 2 mM MgSO4, and 0.1 mM CaCl2; kanamycin (50 ug/ml), spectinomycin (50 ug/ml)
+- Eco1C2G2T2 media: M9 minimal media composed of M9 media salts (6.78 g/L Na2HPO4, 3 g/L KH2PO4, 1 g/L NH4Cl, 0.5 g/L NaCl, 0.34 g/L thiamine hydrochloride, 0.4% D-glucose, 0.2% Casamino acids, 2 mM MgSO4, and 0.1 mM CaCl2; kanamycin (50 ug/ml), spectinomycin (50 ug/ml)
 
 # Eco1C2G2T2 temperature
 Temperature:
-- 37 degrees Celsius
+- Eco1C2G2T2 temperature: 37 degrees Celsius
 
 # Eco1C2G2T2 growth
 Growth:
-- Inoculation: Individual colonies into M9 media, 16 hours overnight in plate shaker.  Dilution: Next day, cells dilute ~200-fold into M9 media with antibiotics, growth for 3 hours.  Induction: Cells diluted ~650-fold into M9 media with antibiotics.  Growth: shaking incubator for 5 hours.  Arrest protein production: PBS and 2mg/ml kanamycin.  Measurement: flow cytometry, data processing for RPU normalization.
-
-# Eco1C2G2T2 logic constraints
-Logic constraints:
-- NOR -> 12 instances max.
-- OUTPUT_OR -> unlimited
+- Eco1C2G2T2 growth: Inoculation: Individual colonies into M9 media, 16 hours overnight in plate shaker.  Dilution: Next day, cells dilute ~200-fold into M9 media with antibiotics, growth for 3 hours.  Induction: Cells diluted ~650-fold into M9 media with antibiotics.  Growth: shaking incubator for 5 hours.  Arrest protein production: PBS and 2mg/ml kanamycin.  Measurement: flow cytometry, data processing for RPU normalization.
 
 # Eco1C2G2T2 posible use
 Posible Use:
-- It can be used to create more complex genetic circuits based on the Escherichia coli NEB 10-beta
-- Includes additional mechanisms for tandem interference and more complex responses.
+- Eco1C2G2T2 posible use: It can be used to create more complex genetic circuits based on the Escherichia coli NEB 10-beta
+- Eco1C2G2T2 posible use: Includes additional mechanisms for tandem interference and more complex responses.
 

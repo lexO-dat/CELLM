@@ -120,9 +120,10 @@ def main():
             upload_verilog()
         elif choice == "3":
             print("Exiting...")
+            break
         else:
             print("Invalid choice! Exiting...")
-            return
+            break
 
 if __name__ == "__main__":
     main()

@@ -37,3 +37,5 @@ networks:
 
 # sudo docker compose up -d ollama ollama-gateway cello -> run only ollama, ollama-gateway, cello on background
 # sudo docker compose run --rm -it cli -> run cli on foreground
+# colima start --mount /Volumes/KINGSTON:/mnt/kingston mount a disk for docker
+# colima start --mount /System/Volumes/Data --memory 32 --cpu 10

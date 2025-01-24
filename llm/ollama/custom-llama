@@ -1,5 +1,5 @@
-FROM llama3:8b
-PARAMETER temperature 1
+FROM deepseek-r1:7b
+PARAMETER temperature 0.7
 PARAMETER stop <|start_header_id|>
 PARAMETER stop <|end_header_id|>
 PARAMETER stop <|eot_id|>

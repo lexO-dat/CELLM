@@ -95,7 +95,8 @@ class ChatApp:
         """Generate Verilog code via API and extract module definition."""
         try:
             response = Ollama_gateway.verilog_generation(str(prompt))
-            responseText = response.content
+            # responseText = response.content
+            responseText = response
             """ print(f"Bot: Generated Response:\n{responseText}")"""
 
             module_pattern = r'module\s+.*?endmodule'
@@ -120,7 +121,7 @@ class ChatApp:
         """Process Verilog code with Cello API."""
         try:
             cello_response = requests.post(
-                "http://172.28.0.4:8000/v1/run",
+                "http://localhost:8000/v1/run",
                 json={
                     "verilogCode": verilog_code,
                     "ucfIndex": self.selected_ucf,

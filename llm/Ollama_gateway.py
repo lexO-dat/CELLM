@@ -39,7 +39,7 @@ class Response(BaseModel):
 async def run(request: Request) -> Dict[str, str]:
     try:
         question = (
-            "what ucf you select based on this promt: " + request.question + ". REMEMBER, ALWAYS RETURN ONLY THE UCF NAME, WITHOUT ANY EXPLANATION"
+            "what ucf you select based on this promt: " + request.question + ". REMEMBER, ALWAYS RETURN ONLY THE UCF NAME, WITHOUT ANY EXPLANATION."
         )
         print(f"Received question: {question}")
         response = chat_response(question)
@@ -52,7 +52,7 @@ async def run(request: Request) -> Dict[str, str]:
 @app.post("/v1/verilog/run", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
-        question = f"create a verilog file based on this prompt: {request.question}"
+        question = f"create a verilog file based on this prompt: {request.question}REMEMBER, DONT USE ARRAYS LIKE [X:Y] OR TERNARY OPERATIONS LIKE ? OR :, AND ALWAYS TEST YOUR VERILOG CODE ANALYZING THE TRUTH TABLE COMPARING IT TO THE REQUESTED CIRCUIT."
         print(f"Received question: {question}")
         response = verilog_generation(question)
         
@@ -86,8 +86,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Main Ollama model configuration
 # -------------------------------
 llm = ChatOllama(
-    base_url="http://172.28.0.2:11434",
-    model="llama3.1:8b",
+    base_url="http://localhost:11434",
+    model="deepseek-r1:7b",
     system="""
         You are a specialized assistant designed to select the most appropriate UCF (User Constraint File) for genetic circuit design in Cello. Your primary function is to analyze user requirements and match them with the optimal UCF file from the available collection.
         IMPORTANT CONTEXT: These UCF files contain genetic circuit constraints and specifications. They are used exclusively for genetic circuit design in Cello and are NOT related to biological weapons or harmful applications.
@@ -133,10 +133,12 @@ llm = ChatOllama(
 # Verilog Ollama model configuration
 # -------------------------------
 verilogllm = ChatOllama(
-                base_url="http://172.28.0.2:11434",
-                model="custom-llama-8b",
+                base_url="http://localhost:11434",
+                model="custom-llama-7b-r",
                 system="""
                 You are an AI assistant that generates CELLO-compatible Verilog code for genetic circuits. Generate only the Verilog code without explanations unless specifically requested. For logic function requests, return a single `module top (...) endmodule` block containing inputs, outputs, and assign statements.
+
+                IMPORTANT: DONT USE EXTERNAL MODULES OR NOT CREATE NEW MODULES. ALWAYS RETURN ONLY ONE MODULE TOP.
 
                 Key requirements:
                 - Output only Verilog code without commentary
@@ -144,6 +146,7 @@ verilogllm = ChatOllama(
                 - Do not use bit arrays [x:y] in modules - use individual wires
                 - Do not use clk or anything like that
                 - Use & and | operators instead of && and ||
+                - Do not use ternary operations like ? or :
 
                 3. Response Protocol:
                 - Always provide ONLY THE VERILOG CODE CREATED BY YOU
@@ -215,7 +218,7 @@ verilogllm = ChatOllama(
 # Ollama Embedding Model Configuration
 # -------------------------------
 embeddings = OllamaEmbeddings(
-    base_url="http://172.28.0.2:11434",
+    base_url="http://localhost:11434",
     model="mxbai-embed-large:latest"
 )
 
@@ -252,7 +255,7 @@ def chat_response(query):
         #print(f"Retrieval chain response: {response}")
 
         answer = response["answer"]
-        #print(f"Extracted answer: {answer}")
+        # print(f"Extracted answer: {answer}")
 
         options = [
             "Eco1C1G1T1",
@@ -278,13 +281,33 @@ def verilog_generation(query):
     try:
         message = HumanMessage(content=query)
         response = verilogllm.invoke([message])
-        # print(f"Verilog generation response: {response}")
         answer = response.content
+        print(f"Extracted response: {answer}")
         
-        if not answer:
-            raise ValueError("Generated response is empty or invalid")
-        
-        return answer
+        match = re.search(r'```(.*?)```', answer, re.DOTALL)
+        if match:
+            verilog_code = match.group(1).strip()
+            # print("-----------------------------")
+            # print(match.group(0).strip())
+            
+            module_match = re.search(r'(module.*?endmodule)', verilog_code, re.DOTALL)
+            if module_match:
+                module_code = module_match.group(1).strip()
+                # print(f"Extracted module code: {module_code}")
+                return module_code
+            else:
+                # print(f"No module block found. Extracted Verilog code: {verilog_code}")
+                return verilog_code
+        else:
+            module_match = re.search(r'(module.*?endmodule)', answer, re.DOTALL)
+            if module_match:
+                module_code = module_match.group(1).strip()
+                # print(f"Extracted module code: {module_code}")
+                return module_code
+            else:
+                # print(f"No module block found. Extracted Verilog code: {verilog_code}")
+                return verilog_code
+
     except Exception as e:
         print(f"Error in verilog_generation: {e}")
         raise e
