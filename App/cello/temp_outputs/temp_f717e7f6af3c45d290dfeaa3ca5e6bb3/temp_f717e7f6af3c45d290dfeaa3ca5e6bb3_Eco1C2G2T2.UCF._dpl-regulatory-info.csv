@@ -1,4 +1,0 @@
-from_partname,type,to_partname,arrowhead_length,linestyle,linewidth,color
-AmtR,Repression,pAmtR,3,-,,0.23;0.66;0.88
-VanR,Repression,pVanR,3,-,,0.91;0.24;0.59
-PhlF,Repression,pPhlF,3,-,,0.98;0.64;0.15

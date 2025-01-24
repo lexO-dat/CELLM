@@ -1,9 +1,0 @@
-from_partname,type,to_partname,arrowhead_length,linestyle,linewidth,color
-AmtR,Repression,pAmtR,3,-,,0.23;0.66;0.88
-CymR,Repression,pCymR,3,-,,0.32;0.26;0.05
-AmeR,Repression,pAmeR,3,-,,0.44;0.8;0.88
-BetI,Repression,pBetI,3,-,,0.33;0.33;0.64
-LmrA,Repression,pLmrA,3,-,,0.94;0.3;0.14
-HlyIIR,Repression,pHlyIIR,3,-,,0.56;0.78;0.24
-VanR,Repression,pVanR,3,-,,0.91;0.24;0.59
-PhlF,Repression,pPhlF,3,-,,0.98;0.64;0.15

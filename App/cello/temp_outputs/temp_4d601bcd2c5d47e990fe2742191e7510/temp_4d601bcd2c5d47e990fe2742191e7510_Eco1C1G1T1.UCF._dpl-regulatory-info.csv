@@ -1,4 +1,0 @@
-from_partname,type,to_partname,arrowhead_length,linestyle,linewidth,color
-SrpR,Repression,pSrpR,3,-,,0.0;0.41;0.22
-HlyIIR,Repression,pHlyIIR,3,-,,0.56;0.78;0.24
-PhlF,Repression,pPhlF,3,-,,0.98;0.64;0.15

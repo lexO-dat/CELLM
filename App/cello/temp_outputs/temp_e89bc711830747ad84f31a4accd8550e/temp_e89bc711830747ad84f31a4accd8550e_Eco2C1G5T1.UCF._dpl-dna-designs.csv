@@ -1,6 +1,0 @@
-design_name,parts
-0,attB2_NONCE_PAD,attB7_NONCE_PAD,PBad,SarJ,R17,Wphi,DT19,attB5_NONCE_PAD,PRpa_A,RiboJ64,R13,P2,DT86,pWphi,RiboJ54,R2,Lambda,Ret0,pP2,RiboJ54,R2,Lambda,Ret0,pLambda,sCin_cassette
-1,attB2_NONCE_PAD,attB7_NONCE_PAD,PBad,SarJ,R17,Wphi,DT19,attB5_NONCE_PAD,pP2,RiboJ54,R2,Lambda,Ret0,PRpa_A,RiboJ64,R13,P2,DT86,pWphi,RiboJ54,R2,Lambda,Ret0,pLambda,sCin_cassette
-2,attB2_NONCE_PAD,attB7_NONCE_PAD,PBad,SarJ,R17,Wphi,DT19,pWphi,RiboJ54,R2,Lambda,Ret0,PRpa_A,RiboJ64,R13,P2,DT86,attB5_NONCE_PAD,pLambda,sCin_cassette,pP2,RiboJ54,R2,Lambda,Ret0
-3,attB2_NONCE_PAD,attB7_NONCE_PAD,attB5_NONCE_PAD,PRpa_A,RiboJ64,R13,P2,DT86,pWphi,RiboJ54,R2,Lambda,Ret0,pP2,RiboJ54,R2,Lambda,Ret0,pLambda,sCin_cassette,PBad,SarJ,R17,Wphi,DT19
-4,attB2_NONCE_PAD,attB7_NONCE_PAD,attB5_NONCE_PAD,PRpa_A,RiboJ64,R13,P2,DT86,PBad,SarJ,R17,Wphi,DT19,pWphi,RiboJ54,R2,Lambda,Ret0,pLambda,sCin_cassette,pP2,RiboJ54,R2,Lambda,Ret0

@@ -95,30 +95,42 @@ async def run(request: CelloRequest):
         inPath = LIBRARY_DIR
         outPath_ = TEMP_OUTPUTS_DIR
         vName_ = os.path.splitext(os.path.basename(verilogPath))[0].replace('.v', '')
+        output_dir = os.path.join(TEMP_OUTPUTS_DIR, vName_)
+        os.makedirs(output_dir, exist_ok=True)
+
         ucfName_ = selectedUcf
         inName_ = inputFile
         outName_ = outputFile
 
         try:
-            # ---------------------------------------------------------
-            # Execute Cello passing the necessary parameters
-            # ---------------------------------------------------------
+            output_dir = os.path.join(TEMP_OUTPUTS_DIR, vName_)
+            os.makedirs(output_dir, exist_ok=True)
+            log.cf.info(f"Output directory created at: {output_dir}")
+
             result = cello_initializer(
                 vName_, ucfName_, inName_, outName_,
-                inPath, outPath_,
+                inPath, output_dir,
                 options=options
             )
+
+            possible_subdir = os.path.join(output_dir, vName_)
+            if os.path.isdir(possible_subdir):
+                output_files_dir = possible_subdir
+            else:
+                output_files_dir = output_dir 
+
+            output_files = os.listdir(output_files_dir)
+            log.cf.info(f"Generated files: {output_files}")
+
         except Exception as e:
             log.cf.error("Error executing cello", exc_info=True)
             raise HTTPException(status_code=500, detail=str(e))
-
-        output_files = os.listdir(os.path.join(TEMP_OUTPUTS_DIR, vName_))
 
         return JSONResponse(content={
             "message": "Cello process completed.",
             "result": result,
             "folder_name": vName_,
-            "output_files": output_files 
+            "output_files": output_files
         })
 
     finally:
@@ -136,12 +148,16 @@ async def run(request: CelloRequest):
 # ---------------------------------------------------
 @app.get("/v1/outputs/{folder_name}/{file_name}", summary="Return File")
 async def output(folder_name: str, file_name: str):
-    outputPath = os.path.join(TEMP_OUTPUTS_DIR, folder_name, file_name)
+    paths_to_try = [
+        os.path.join(TEMP_OUTPUTS_DIR, folder_name, file_name), 
+        os.path.join(TEMP_OUTPUTS_DIR, folder_name, folder_name, file_name)
+    ]
     
-    if not os.path.isfile(outputPath):
-        raise HTTPException(status_code=404, detail="File not found")
+    for outputPath in paths_to_try:
+        if os.path.isfile(outputPath):
+            return FileResponse(outputPath)
     
-    return FileResponse(outputPath)
+    raise HTTPException(status_code=404, detail="File not found")
 
 
 
