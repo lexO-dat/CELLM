@@ -1,7 +1,4 @@
-# Use an OpenJDK base image
 FROM openjdk:11-jre-slim as java-base
-
-# Use an official Python runtime as a second stage
 FROM python:3.11-slim-buster
 
 # Copy Java from the Java base image

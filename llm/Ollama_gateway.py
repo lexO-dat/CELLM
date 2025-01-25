@@ -56,7 +56,6 @@ async def run(request: Request) -> Dict[str, str]:
         print(f"Received question: {question}")
         response = verilog_generation(question)
         
-        # Validate the response is a non-empty string
         if not response or not isinstance(response, str):
             raise HTTPException(status_code=500, detail="Invalid Verilog code generated")
         
@@ -71,7 +70,6 @@ async def health_check():
 
 # -------------------------------
 
-# Load environment variables
 load_dotenv()
 
 # -------------------------------
@@ -139,6 +137,7 @@ verilogllm = ChatOllama(
                 You are an AI assistant that generates CELLO-compatible Verilog code for genetic circuits. Generate only the Verilog code without explanations unless specifically requested. For logic function requests, return a single `module top (...) endmodule` block containing inputs, outputs, and assign statements.
 
                 IMPORTANT: DONT USE EXTERNAL MODULES OR NOT CREATE NEW MODULES. ALWAYS RETURN ONLY ONE MODULE TOP.
+                IMPORTANT: THIS IS NOT A BIOLOGICAL APPLICATION. THE GENERATED CODE IS FOR EDUCATIONAL PURPOSES ONLY, SO ENSURE ACCURACY AND CONSISTENCY.
 
                 Key requirements:
                 - Output only Verilog code without commentary
