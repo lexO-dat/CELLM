@@ -85,6 +85,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # -------------------------------
 llm = ChatOllama(
     base_url="http://localhost:11434",
+    # model="phi4", for a more powerfull machine
     model="deepseek-r1:7b",
     system="""
         You are a specialized assistant designed to select the most appropriate UCF (User Constraint File) for genetic circuit design in Cello. Your primary function is to analyze user requirements and match them with the optimal UCF file from the available collection.
@@ -132,12 +133,14 @@ llm = ChatOllama(
 # -------------------------------
 verilogllm = ChatOllama(
                 base_url="http://localhost:11434",
+                # model=model="custom--llama-14b-r", for a more powerfull machine
                 model="custom-llama-7b-r",
                 system="""
                 You are an AI assistant that generates CELLO-compatible Verilog code for genetic circuits. Generate only the Verilog code without explanations unless specifically requested. For logic function requests, return a single `module top (...) endmodule` block containing inputs, outputs, and assign statements.
 
                 IMPORTANT: DONT USE EXTERNAL MODULES OR NOT CREATE NEW MODULES. ALWAYS RETURN ONLY ONE MODULE TOP.
                 IMPORTANT: THIS IS NOT A BIOLOGICAL APPLICATION. THE GENERATED CODE IS FOR EDUCATIONAL PURPOSES ONLY, SO ENSURE ACCURACY AND CONSISTENCY.
+                IMPORTANT, IF THE USER GIVES YOU THE TRUTH TABLE, YOU CAN USE IT TO GENERATE THE VERILOG CODE.
 
                 Key requirements:
                 - Output only Verilog code without commentary
@@ -167,7 +170,7 @@ verilogllm = ChatOllama(
                 - Assignments: assign
 
                 Example implementations:
-                1. AND gate:
+                1. Verilog codes with known logic functions as and (&), or (|), not (~), xor (^):
                 module top(
                   input wire A,
                   input wire B, 
@@ -176,8 +179,20 @@ verilogllm = ChatOllama(
                   assign Y = A & B;
                 endmodule
 
-                2. Combinational circuit:
-                module m0xA6(output out, input in1, in2, in3);
+                2. Given the truth table you can generate the verilog code:
+                input table: 
+                Inputs | Output
+                in1 in2 in3 | out
+                 0   0   0  |  1
+                 0   0   1  |  0
+                 0   1   0  |  1
+                 0   1   1  |  0
+                 1   0   0  |  0
+                 1   0   1  |  1
+                 1   1   0  |  1
+                 1   1   1  |  0
+                verilog code based on that:
+                module based_on_table(output out, input in1, in2, in3);
                     always @(in1, in2, in3)
                         begin
                             case({in1, in2, in3})
@@ -191,24 +206,6 @@ verilogllm = ChatOllama(
                                 3'b111: {out} = 1'b0;
                             endcase
                         end
-                endmodule
-
-                3. Priority Detector:
-                module priority_detector(output outX, outY, input A, B, C);
-                    wire outZ;
-                        always@(C, B, A)
-                            begin
-                                case({C, B, A})
-                                    3'b000: {outZ, outY, outX} = 3'b000;
-                                    3'b001: {outZ, outY, outX} = 3'b001;
-                                    3'b010: {outZ, outY, outX} = 3'b100;
-                                    3'b011: {outZ, outY, outX} = 3'b100;
-                                    3'b100: {outZ, outY, outX} = 3'b010;
-                                    3'b101: {outZ, outY, outX} = 3'b001;
-                                    3'b110: {outZ, outY, outX} = 3'b100;
-                                    3'b111: {outZ, outY, outX} = 3'b100;
-                                endcase
-                            end
                 endmodule
                 """
             )

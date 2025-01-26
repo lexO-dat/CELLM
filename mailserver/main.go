@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"mailserver/mail"
 	"net/http"
 	"os"
 	"path/filepath"
-	"email-api/mail"
+
 	"github.com/joho/godotenv"
 )
 
@@ -40,7 +41,7 @@ type EmailRequest struct {
 }
 
 // ---------------------------------------------------------------------------
-// Get all the files from the specified folder to send all the files inside it 
+// Get all the files from the specified folder to send all the files inside it
 // ---------------------------------------------------------------------------
 func getFilesFromFolder(folderPath string) ([]string, error) {
 	var files []string
@@ -58,7 +59,7 @@ func getFilesFromFolder(folderPath string) ([]string, error) {
 		}
 		return nil
 	})
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("error walking through folder: %v", err)
 	}
@@ -91,7 +92,7 @@ func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error processing the json: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if emailReq.Destinatario == "" || emailReq.Subject == "" || emailReq.AttachmentPath == ""{
+	if emailReq.Destinatario == "" || emailReq.Subject == "" || emailReq.AttachmentPath == "" {
 		http.Error(w, "Required fields missing", http.StatusBadRequest)
 		return
 	}
@@ -154,8 +155,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8002", nil))
 }
 
-
-/* 
+/*
 
 curl -X POST http://localhost:8002/v1/mail/send \
      -H "Content-Type: application/json" \
