@@ -24,6 +24,14 @@ class ChatApp:
 
         self.start_go_server()
 
+    def print_box(self, message):
+        """Dynamically generate an ASCII box around the given message."""
+        top = f"/{'-' * len(message)}\\"
+        middle = f"|{message}|"
+        bottom = f"\\{'-' * len(message)}/"
+        print(top)
+        print(middle)
+        print(bottom)
 
     def display_ucf_options(self):
         """Display UCF options."""
@@ -46,9 +54,7 @@ class ChatApp:
     def auto_select_ucf(self, input_message):
         if self.manual_ucf:
             return
-        print("/-------------------------------------------------\")
-        print("|Bot: Automatically selecting UCF based on input...|")
-        print("\-------------------------------------------------/")
+        self.print_box("Bot: Automatically selecting UCF based on input...")
         try:
             response = Ollama_gateway.chat_response(str(input_message))
             selected_ucf_name = response
@@ -59,10 +65,7 @@ class ChatApp:
                     self.selected_ucf = ucf['id']
                     print(f"Bot: Auto-selected UCF: {ucf['name']}")
                     return
-            print("/-------------------------------------------------\")
-            print("Bot: Failed to detect UCF. Using default UCF.")
-            print("\-------------------------------------------------/")
-            
+            self.print_box("Bot: Failed to detect UCF. Using default UCF.")
             self.selected_ucf = 1
         except Exception as e:
             print(f"Error selecting UCF: {e}")
@@ -75,22 +78,14 @@ class ChatApp:
             print("Message cannot be empty.")
             return
 
-        # self.messages.append({"text": input_message, "isUser": True})
-        # print(f"\nYou: {input_message}")
-
         self.auto_select_ucf(input_message)
-        print("/-------------------------------\")
-        print("|Bot: Generating Verilog code...|")
-        print("\-------------------------------/")
+        self.print_box("Bot: Generating Verilog code...")
         verilog_code = self.generate_verilog(input_message)
         if not verilog_code:
             print("Bot: Failed to generate Verilog code.")
             return
 
-        print("/----------------------------\")
-        print("|Bot: Processing with Cello...|")
-        print("\----------------------------/")
-
+        self.print_box("Bot: Processing with Cello...")
         self.process_with_cello(verilog_code)
 
         self.ask_email_confirmation()
@@ -102,9 +97,7 @@ class ChatApp:
         """Generate Verilog code via API and extract module definition."""
         try:
             response = Ollama_gateway.verilog_generation(str(prompt))
-            # responseText = response.content
             responseText = response
-            """ print(f"Bot: Generated Response:\n{responseText}")"""
 
             module_pattern = r'module\s+.*?endmodule'
             matches = re.findall(module_pattern, responseText, re.DOTALL)
@@ -147,18 +140,14 @@ class ChatApp:
             self.folder_name = cello_data.get("folder_name", "")
             self.output_files = cello_data.get("output_files", [])
 		
-            print("/-------------------------------------\")
-            print("|Bot: Cello Processing Completed!     |")
-            print("\-------------------------------------/")
-            
-	    print(f"|Bot: Folder Name - {self.folder_name}|")
+            self.print_box("Bot: Cello Processing Completed!")
+            print(f"|Bot: Folder Name - {self.folder_name}|")
 
             print("--------------------------------------------------------------------------------")
             print("Bot: Generated Files:")
             for file in self.output_files:
                 print(f"|- {file}|")
 
-            # TODO: ask for the email and send the generated files via email
             for file in self.output_files:
                 self.download_file(self.folder_name, file)
             
@@ -206,7 +195,6 @@ class ChatApp:
     def send_email(self, email):
         """Send files via email using the API."""
         try:
-            # Absolute path to the `Downloads` folder
             absolute_attachment_path = os.path.abspath(os.path.join("Downloads", self.folder_name))
             print(absolute_attachment_path)
 
@@ -234,7 +222,6 @@ class ChatApp:
             if not os.path.isdir(mailserver_path):
                 raise FileNotFoundError(f"Mailserver folder not found at {mailserver_path}")
         
-            # Lanza el proceso. No llamamos a communicate ni establecemos timeout
             self.go_server_process = subprocess.Popen(
                 ["go", "run", "main.go"],
                 cwd=mailserver_path,
@@ -251,7 +238,6 @@ class ChatApp:
         """Stop the Go server subprocess."""
         if self.go_server_process:
             try:
-                # Send a termination signal
                 self.go_server_process.terminate()
                 self.go_server_process.wait()
                 print("Go server has been terminated.")
