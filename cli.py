@@ -4,6 +4,8 @@ from llm import Ollama_gateway
 import subprocess
 import re
 
+# TODO: implement something for the truth table submition, maybe something to automatically add the \n and | characters or something
+
 ucf_options = [
     {"id": 0, "name": "Bth1C1G1T1"},
     {"id": 1, "name": "Eco1C1G1T1"},

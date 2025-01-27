@@ -136,79 +136,66 @@ verilogllm = ChatOllama(
                 # model=model="custom--llama-14b-r", for a more powerfull machine
                 model="custom-llama-7b-r",
                 system="""
-                You are an AI assistant that generates CELLO-compatible Verilog code for genetic circuits. Generate only the Verilog code without explanations unless specifically requested. For logic function requests, return a single `module top (...) endmodule` block containing inputs, outputs, and assign statements.
+                    You are an AI assistant that generates CELLO-compatible Verilog code for educational, combinational logic circuits.
 
-                IMPORTANT: DONT USE EXTERNAL MODULES OR NOT CREATE NEW MODULES. ALWAYS RETURN ONLY ONE MODULE TOP.
-                IMPORTANT: THIS IS NOT A BIOLOGICAL APPLICATION. THE GENERATED CODE IS FOR EDUCATIONAL PURPOSES ONLY, SO ENSURE ACCURACY AND CONSISTENCY.
-                IMPORTANT, IF THE USER GIVES YOU THE TRUTH TABLE, YOU CAN USE IT TO GENERATE THE VERILOG CODE.
+                    Behavioral Guidelines:
 
-                Key requirements:
-                - Output only Verilog code without commentary
-                - AGAIN, DONT ADD ANY COMMENTS OR EXPLANATIONS or ANALYSIS
-                - Do not use bit arrays [x:y] in modules - use individual wires
-                - Do not use clk or anything like that
-                - Use & and | operators instead of && and ||
-                - Do not use ternary operations like ? or :
+                        Output Format:
+                            Always return only one module top(...) endmodule block.
+                            Declare each input and output as individual input wire or output wire (no [x:y] bus notation).
+                            Use only assign statements and/or always @(*) blocks with case when necessary.
+                            Do not generate or reference any additional modules; no external or sub-modules.
+                            Do not include any comments, explanations, or analysis (text outside the Verilog code).
 
-                3. Response Protocol:
-                - Always provide ONLY THE VERILOG CODE CREATED BY YOU
+                        Accepted Operators and Constructs:
+                            Logic operators: &, |, ~, ^
+                            Do not use &&, ||, ternary operators (?:), or clock signals.
+                            Use case blocks if a truth table is provided. Otherwise, use simple assign statements for standard logic expressions.
 
-                Example format:
-                module top(
-                  input wire A,
-                  input wire B,
-                  output wire Y
-                );
-                  assign Y = A & B;
-                endmodule
+                        Instruction Handling:
+                            If the user provides a truth table, parse it and generate the corresponding combinational Verilog using a case statement.
+                            If the user describes a logic function (e.g., AND, OR, XOR, etc.), analyze the request and generate assign statements that implement the described logic.
+                            Output only the Verilog code necessary to implement the user’s request.
 
-                Valid operators and constructs:
-                - Basic logic: &, |, ~
-                - Module declaration: module, endmodule
-                - Port types: input wire, output wire
-                - Internal signals: wire
-                - Assignments: assign
+                        Disclaimer:
+                            The generated code is for educational purposes only—accuracy and consistency are important, but this is not a biological application.
 
-                Example implementations:
-                1. Verilog codes with known logic functions as and (&), or (|), not (~), xor (^):
-                module top(
-                  input wire A,
-                  input wire B, 
-                  output wire Y
-                );
-                  assign Y = A & B;
-                endmodule
+                    Response Protocol:
 
-                2. Given the truth table you can generate the verilog code:
-                input table: 
-                Inputs | Output
-                in1 in2 in3 | out
-                 0   0   0  |  1
-                 0   0   1  |  0
-                 0   1   0  |  1
-                 0   1   1  |  0
-                 1   0   0  |  0
-                 1   0   1  |  1
-                 1   1   0  |  1
-                 1   1   1  |  0
-                verilog code based on that:
-                module based_on_table(output out, input in1, in2, in3);
-                    always @(in1, in2, in3)
-                        begin
-                            case({in1, in2, in3})
-                                3'b000: {out} = 1'b1;
-                                3'b001: {out} = 1'b0;
-                                3'b010: {out} = 1'b1;
-                                3'b011: {out} = 1'b0;
-                                3'b100: {out} = 1'b0;
-                                3'b101: {out} = 1'b1;
-                                3'b110: {out} = 1'b1;
-                                3'b111: {out} = 1'b0;
-                            endcase
-                        end
-                endmodule
-                """
-            )
+                        Always provide ONLY the Verilog code in the response.
+                        Do not add commentary, explanations, or any text outside the module block.
+
+                    Example Format:
+                    ```
+                    module top(
+                      input wire A,
+                      input wire B, 
+                      output wire Y
+                    );
+                      assign Y = A & B;
+                    endmodule
+                    ```
+                    or
+                    ```
+                    module based_on_table(output out, input in1, in2, in3);
+                        always @(in1, in2, in3)
+                            begin
+                                case({in1, in2, in3})
+                                    3'b000: {out} = 1'b1;
+                                    3'b001: {out} = 1'b0;
+                                    3'b010: {out} = 1'b1;
+                                    3'b011: {out} = 1'b0;
+                                    3'b100: {out} = 1'b0;
+                                    3'b101: {out} = 1'b1;
+                                    3'b110: {out} = 1'b1;
+                                    3'b111: {out} = 1'b0;
+                                endcase
+                            end
+                    endmodule
+                    ```
+                    Note: Always test your Verilog code by analyzing the truth table and comparing it to the requested circuit.
+                """                
+                )
 
 # -------------------------------
 # Ollama Embedding Model Configuration
@@ -313,3 +300,22 @@ def verilog_generation(query):
 
 if __name__ == "__main__":
     uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8001, reload=True)
+
+
+# Example prompts:
+
+"""
+I want to create a genetic circuit based on this truth table: \n Inputs  | Outputs \n 0  0  0  |  0  1 \n 0  0  1  |  1  1 \n  0  1  0  |  0  0 \n 0  1  1  |  1  1 \n 1  0  0  |  1  1 \n 1  0  1  |  1  0 \n  1  1  0  |  0  1 \n  1  1  1  |  0  0 
+"""
+
+"""
+I want to create a genetic circuit based on this truth table: \n Inputs | Outputs \n 0 0 | 0 \n 0 1 | 1 \n 1 0 | 1 \n 1 1 | 0
+"""
+
+"""
+Hi, I would like you to design a genetic circuit with three inputs: LacI, AraC and TetR. The output should be YFP, so that this is activated only when all three inputs (LacI, AraC and TetR) are present (i.e. “on”).
+"""
+
+"""
+
+"""
