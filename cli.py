@@ -46,8 +46,9 @@ class ChatApp:
     def auto_select_ucf(self, input_message):
         if self.manual_ucf:
             return
-
-        print("Bot: Automatically selecting UCF based on input...")
+        print("/-------------------------------------------------\")
+        print("|Bot: Automatically selecting UCF based on input...|")
+        print("\-------------------------------------------------/")
         try:
             response = Ollama_gateway.chat_response(str(input_message))
             selected_ucf_name = response
@@ -58,8 +59,10 @@ class ChatApp:
                     self.selected_ucf = ucf['id']
                     print(f"Bot: Auto-selected UCF: {ucf['name']}")
                     return
-
+            print("/-------------------------------------------------\")
             print("Bot: Failed to detect UCF. Using default UCF.")
+            print("\-------------------------------------------------/")
+            
             self.selected_ucf = 1
         except Exception as e:
             print(f"Error selecting UCF: {e}")
@@ -73,17 +76,21 @@ class ChatApp:
             return
 
         # self.messages.append({"text": input_message, "isUser": True})
-        print(f"\nYou: {input_message}")
+        # print(f"\nYou: {input_message}")
 
         self.auto_select_ucf(input_message)
-
-        print("Bot: Generating Verilog code...")
+        print("/-------------------------------\")
+        print("|Bot: Generating Verilog code...|")
+        print("\-------------------------------/")
         verilog_code = self.generate_verilog(input_message)
         if not verilog_code:
             print("Bot: Failed to generate Verilog code.")
             return
 
-        print("Bot: Processing with Cello...")
+        print("/----------------------------\")
+        print("|Bot: Processing with Cello...|")
+        print("\----------------------------/")
+
         self.process_with_cello(verilog_code)
 
         self.ask_email_confirmation()
@@ -139,13 +146,17 @@ class ChatApp:
 
             self.folder_name = cello_data.get("folder_name", "")
             self.output_files = cello_data.get("output_files", [])
-            print("Bot: Cello Processing Completed!")
-            print(f"Bot: Folder Name - {self.folder_name}")
+		
+            print("/-------------------------------------\")
+            print("|Bot: Cello Processing Completed!     |")
+            print("\-------------------------------------/")
+            
+	    print(f"|Bot: Folder Name - {self.folder_name}|")
 
             print("--------------------------------------------------------------------------------")
             print("Bot: Generated Files:")
             for file in self.output_files:
-                print(f"- {file}")
+                print(f"|- {file}|")
 
             # TODO: ask for the email and send the generated files via email
             for file in self.output_files:
@@ -200,7 +211,7 @@ class ChatApp:
             print(absolute_attachment_path)
 
             response = requests.post(
-                "http://localhost:8002/v1/mail/send",
+                "http://localhost:8989/v1/mail/send",
                 json={
                     "destinatario": email,
                     "subject": "Sending all the generated files by geneticAI app",

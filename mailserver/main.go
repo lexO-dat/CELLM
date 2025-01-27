@@ -18,7 +18,7 @@ import (
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Advertencia: no se cargó el archivo .env, utilizando variables de entorno del sistema.")
+		log.Println("Advertencia: no se carg?? el archivo .env, utilizando variables de entorno del sistema.")
 	}
 }
 
@@ -151,8 +151,8 @@ func sendEmailHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/v1/mail/send", sendEmailHandler)
-	fmt.Println("Server listening on port 8002...")
-	log.Fatal(http.ListenAndServe(":8002", nil))
+	fmt.Println("Server listening on port 8989...")
+	log.Fatal(http.ListenAndServe(":8989", nil))
 }
 
 /*

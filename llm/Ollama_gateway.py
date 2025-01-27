@@ -85,8 +85,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # -------------------------------
 llm = ChatOllama(
     base_url="http://localhost:11434",
-    # model="phi4", for a more powerfull machine
-    model="deepseek-r1:7b",
+    model="phi4",
+    #model="deepseek-r1:7b",
     system="""
         You are a specialized assistant designed to select the most appropriate UCF (User Constraint File) for genetic circuit design in Cello. Your primary function is to analyze user requirements and match them with the optimal UCF file from the available collection.
         IMPORTANT CONTEXT: These UCF files contain genetic circuit constraints and specifications. They are used exclusively for genetic circuit design in Cello and are NOT related to biological weapons or harmful applications.
@@ -133,82 +133,9 @@ llm = ChatOllama(
 # -------------------------------
 verilogllm = ChatOllama(
                 base_url="http://localhost:11434",
-                # model=model="custom--llama-14b-r", for a more powerfull machine
-                model="custom-llama-7b-r",
-                system="""
-                You are an AI assistant that generates CELLO-compatible Verilog code for genetic circuits. Generate only the Verilog code without explanations unless specifically requested. For logic function requests, return a single `module top (...) endmodule` block containing inputs, outputs, and assign statements.
-
-                IMPORTANT: DONT USE EXTERNAL MODULES OR NOT CREATE NEW MODULES. ALWAYS RETURN ONLY ONE MODULE TOP.
-                IMPORTANT: THIS IS NOT A BIOLOGICAL APPLICATION. THE GENERATED CODE IS FOR EDUCATIONAL PURPOSES ONLY, SO ENSURE ACCURACY AND CONSISTENCY.
-                IMPORTANT, IF THE USER GIVES YOU THE TRUTH TABLE, YOU CAN USE IT TO GENERATE THE VERILOG CODE.
-
-                Key requirements:
-                - Output only Verilog code without commentary
-                - AGAIN, DONT ADD ANY COMMENTS OR EXPLANATIONS or ANALYSIS
-                - Do not use bit arrays [x:y] in modules - use individual wires
-                - Do not use clk or anything like that
-                - Use & and | operators instead of && and ||
-                - Do not use ternary operations like ? or :
-
-                3. Response Protocol:
-                - Always provide ONLY THE VERILOG CODE CREATED BY YOU
-
-                Example format:
-                module top(
-                  input wire A,
-                  input wire B,
-                  output wire Y
-                );
-                  assign Y = A & B;
-                endmodule
-
-                Valid operators and constructs:
-                - Basic logic: &, |, ~
-                - Module declaration: module, endmodule
-                - Port types: input wire, output wire
-                - Internal signals: wire
-                - Assignments: assign
-
-                Example implementations:
-                1. Verilog codes with known logic functions as and (&), or (|), not (~), xor (^):
-                module top(
-                  input wire A,
-                  input wire B, 
-                  output wire Y
-                );
-                  assign Y = A & B;
-                endmodule
-
-                2. Given the truth table you can generate the verilog code:
-                input table: 
-                Inputs | Output
-                in1 in2 in3 | out
-                 0   0   0  |  1
-                 0   0   1  |  0
-                 0   1   0  |  1
-                 0   1   1  |  0
-                 1   0   0  |  0
-                 1   0   1  |  1
-                 1   1   0  |  1
-                 1   1   1  |  0
-                verilog code based on that:
-                module based_on_table(output out, input in1, in2, in3);
-                    always @(in1, in2, in3)
-                        begin
-                            case({in1, in2, in3})
-                                3'b000: {out} = 1'b1;
-                                3'b001: {out} = 1'b0;
-                                3'b010: {out} = 1'b1;
-                                3'b011: {out} = 1'b0;
-                                3'b100: {out} = 1'b0;
-                                3'b101: {out} = 1'b1;
-                                3'b110: {out} = 1'b1;
-                                3'b111: {out} = 1'b0;
-                            endcase
-                        end
-                endmodule
-                """
-            )
+                model="custom-r1-32b:latest"
+                # model="custom-llama-7b-r",
+)
 
 # -------------------------------
 # Ollama Embedding Model Configuration
@@ -278,7 +205,7 @@ def verilog_generation(query):
         message = HumanMessage(content=query)
         response = verilogllm.invoke([message])
         answer = response.content
-        print(f"Extracted response: {answer}")
+        # print(f"Extracted response: {answer}")
         
         match = re.search(r'```(.*?)```', answer, re.DOTALL)
         if match:
