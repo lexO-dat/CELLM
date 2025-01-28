@@ -39,7 +39,6 @@ class ChatFlow:
         
         # Verilog design
         self.handle_verilog_interaction()
-        self.generate_verilog()
         
         # Cello
         self.run_cello()
@@ -106,64 +105,60 @@ class ChatFlow:
                 print("Invalid input. Please enter a valid number.")
 
     # --------------------------------
-    #   Verilog
+    #   Verilog Interaction
     # --------------------------------
     def handle_verilog_interaction(self):
-        print("\nNow let's refine your verilog design.")
-        print("You can ask question about logic, inputs/outputs, truth table, etc.\n")
+        print("\nNow let's refine your Verilog design.")
+        print("You can ask questions about logic, inputs/outputs, truth table, etc.\n")
 
         while True:
-            userAction = input("Type 'r' to refine your design or 'done' if you are ready to finalize the verilog: ").strip().lower()
+            user_action = input("\nType 'r' to start refining your Verilog code or 'done' to finish: ").strip().lower()
 
-            if userAction =="done":
-                print("Great!, Let's proceed to final verilog generation. \n")
-                break
-            elif userAction == "r":
-                userRefinement = input("\nPlease describe your question/refinement: ")
-
-                try:
-                    resp = requests.post(
-                            VERILOG_API_URL,
-                            json={"question": userRefinement}
-                            )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    aiAnswer = data.get("answer", "")
-
-                    print("\n--- Verilog suggestion --")
-                    print(aiAnswer)
-                    print("-------------------------\n")
-                except Exception as e:
-                    print(f"Error calling verilog API for refinement: {e}")
+            if user_action == 'done':
+                if self.verilog_code:
+                    print("\nProceeding with the generated Verilog code.")
+                    return
+                else:
+                    print("\nNo Verilog code has been generated yet. Please refine your design first.")
+            elif user_action == 'r':
+                print("\nEntering refinement mode. You can now chat with the model. Type 'done' when finished.\n")
+                while True:
+                    user_input = input("Your question/refinement (or 'done' to finish): ").strip()
+                    if user_input.lower() == 'done':
+                        if self.verilog_code:
+                            print("\nExiting refinement mode.")
+                            return
+                        else:
+                            print("\nNo Verilog module detected. Please continue refining.")
+                            continue
+                    try:
+                        resp = requests.post(VERILOG_API_URL, json={"question": user_input})
+                        resp.raise_for_status()
+                        data = resp.json()
+                        ai_answer = data.get("answer", "")
+                        
+                        module_code = self.extract_verilog_module(ai_answer)
+                        if module_code:
+                            self.verilog_code = module_code
+                            print("\n--- Extracted Verilog Module ---")
+                            print(self.verilog_code)
+                            print("---------------------------------\n")
+                        else:
+                            print("\n--- Model Response ---")
+                            print(ai_answer)
+                            print("-----------------------\n")
+                    except Exception as e:
+                        print(f"Error communicating with Verilog API: {e}")
             else:
-                print("Please type 'r' to refine or 'done' to finish")
+                print("Invalid input. Please type 'r' to refine or 'done' to proceed.")
 
-    # -------------------------------------------
-    # Generate Verilog from final prompt
-    # -------------------------------------------
-    def generate_verilog(self):
-        final_prompt = input("Please describe your final circuit design for Verilog generation: ").strip()
-        payload = {"question": final_prompt}
-        try:
-            resp = requests.post(VERILOG_API_URL, json=payload)
-            resp.raise_for_status()
-            data = resp.json()   # => { "answer": "... verilog code ..." }
-            verilog_code = data.get("answer", "")
-            
-            # Extract `module ... endmodule` if needed
-            #mod_pattern = r'(module\s+.*?endmodule)'
-            #match = re.search(mod_pattern, verilog_code, re.DOTALL)
-            #if match:
-            #    self.verilog_code = match.group(1)
-            #else:
-            #    self.verilog_code = verilog_code
-            self.verilog_code = verilog_code
-            print("\nGenerated Verilog Code:\n")
-            print(self.verilog_code)
-            print("\nVerilog generation complete.\n")
-        except Exception as e:
-            print(f"Error generating Verilog code: {e}")
-            self.verilog_code = ""
+    def extract_verilog_module(self, text: str) -> str:
+        """
+        Extracts the first Verilog module block from the given text.
+        """
+        mod_pattern = r'(module\s+.*?endmodule)'
+        match = re.search(mod_pattern, text, re.DOTALL)
+        return match.group(1) if match else ""
 
     # -------------------------------------------
     # Call Cello with UCF + Verilog
@@ -203,10 +198,6 @@ class ChatFlow:
             print(f"Error calling Cello API: {e}")
 
     def map_ucf_to_index(self, ucf_name: str) -> int:
-        """
-        If your Cello backend expects an ID for the UCF index,
-        you can map them here. This is just a simple example.
-        """
         for entry in UCF_OPTIONS:
             if entry["name"] == ucf_name:
                 return entry["id"]
@@ -234,7 +225,6 @@ class ChatFlow:
 
     def send_email(self, email: str):
         try:
-            # For demonstration, assume the files are in a "Downloads" folder
             attachment_path = f"Downloads/{self.folder_name}"
             payload = {
                 "destinatario": email,
