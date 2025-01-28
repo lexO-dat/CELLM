@@ -33,7 +33,7 @@ class ChatFlow:
         print("Welcome to Genetic Design Chat!")
         print("---------------------------------\n")
         
-        # Manual or automatic ucf
+        # Manual or automatic UCF
         self.ask_ucf_mode()
         print(f"\nUCF Selected: {self.selected_ucf_name}\n")
         
@@ -73,7 +73,7 @@ class ChatFlow:
         try:
             resp = requests.post(UCF_API_URL, json=payload)
             resp.raise_for_status()
-            data = resp.json()  # => { "answer": "Eco1C1G1T1" } or something similar
+            data = resp.json()  # { "answer": "Eco1C1G1T1" } or something similar
             answer = data.get("answer", "Eco1C1G1T1")
             # Just store it
             self.selected_ucf_name = answer
@@ -105,7 +105,7 @@ class ChatFlow:
                 print("Invalid input. Please enter a valid number.")
 
     # --------------------------------
-    #   Verilog Interaction
+    #   Verilog Interaction (fixed)
     # --------------------------------
     def handle_verilog_interaction(self):
         print("\nNow let's refine your Verilog design.")
@@ -115,22 +115,24 @@ class ChatFlow:
             user_action = input("\nType 'r' to start refining your Verilog code or 'done' to finish: ").strip().lower()
 
             if user_action == 'done':
+                # FIXED: Let the user proceed even if no verilog code is found
                 if self.verilog_code:
                     print("\nProceeding with the generated Verilog code.")
-                    return
                 else:
-                    print("\nNo Verilog code has been generated yet. Please refine your design first.")
+                    print("\nNo Verilog code found. Proceeding without it.")
+                return
+            
             elif user_action == 'r':
                 print("\nEntering refinement mode. You can now chat with the model. Type 'done' when finished.\n")
                 while True:
                     user_input = input("Your question/refinement (or 'done' to finish): ").strip()
                     if user_input.lower() == 'done':
+                        # FIXED: Allow exiting even if no module is found
                         if self.verilog_code:
-                            print("\nExiting refinement mode.")
-                            return
+                            print("\nExiting refinement mode. Found a Verilog module.")
                         else:
-                            print("\nNo Verilog module detected. Please continue refining.")
-                            continue
+                            print("\nExiting refinement mode. No Verilog module detected.")
+                        break
                     try:
                         resp = requests.post(VERILOG_API_URL, json={"question": user_input})
                         resp.raise_for_status()
