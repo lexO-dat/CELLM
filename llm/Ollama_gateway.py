@@ -316,6 +316,4 @@ I want to create a genetic circuit based on this truth table: \n Inputs | Output
 Hi, I would like you to design a genetic circuit with three inputs: LacI, AraC and TetR. The output should be YFP, so that this is activated only when all three inputs (LacI, AraC and TetR) are present (i.e. “on”).
 """
 
-"""
 
-"""
