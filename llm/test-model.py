@@ -109,22 +109,34 @@ class ChatFlow:
     #   Verilog
     # --------------------------------
     def handle_verilog_interaction(self):
-        """
-        TODO: have a loop here to ask clarifying questions until the user is satisfied.
-        """
-        print("\nNow let's prepare to generate the Verilog code.")
-        print("Feel free to specify your logic, inputs/outputs, etc.\n")
-        
+        print("\nNow let's refine your verilog design.")
+        print("You can ask question about logic, inputs/outputs, truth table, etc.\n")
+
         while True:
-            proceed = input("Are you ready to generate your Verilog? (y/n): ").strip().lower()
-            if proceed == 'y':
+            userAction = input("Type 'r' to refine your design or 'done' if you are ready to finalize the verilog: ").strip().lower()
+
+            if userAction =="done":
+                print("Great!, Let's proceed to final verilog generation. \n")
                 break
-            elif proceed == 'n':
-                print("Ok. Please refine your design. Type in any notes or constraints you'd like.\n")
-                user_refinement = input("User refinement: ")
-                # Here maybe call again the llm to refine the code.
+            elif userAction == "r":
+                userRefinement = input("\nPlease describe your question/refinement: ")
+
+                try:
+                    resp = requests.post(
+                            VERILOG_API_URL,
+                            json={"question": userRefinement}
+                            )
+                    resp.raise_for_status()
+                    data = resp.json()
+                    aiAnswer = data.get("answer", "")
+
+                    print("\n--- Verilog suggestion --")
+                    print(aiAnswer)
+                    print("-------------------------\n")
+                except Exception as e:
+                    print(f"Error calling verilog API for refinement: {e}")
             else:
-                print("Please answer with 'y' or 'n'.")
+                print("Please type 'r' to refine or 'done' to finish")
 
     # -------------------------------------------
     # Generate Verilog from final prompt
@@ -139,12 +151,12 @@ class ChatFlow:
             verilog_code = data.get("answer", "")
             
             # Extract `module ... endmodule` if needed
-            mod_pattern = r'(module\s+.*?endmodule)'
-            match = re.search(mod_pattern, verilog_code, re.DOTALL)
-            if match:
-                self.verilog_code = match.group(1)
-            else:
-                self.verilog_code = verilog_code
+            #mod_pattern = r'(module\s+.*?endmodule)'
+            #match = re.search(mod_pattern, verilog_code, re.DOTALL)
+            #if match:
+            #    self.verilog_code = match.group(1)
+            #else:
+            #    self.verilog_code = verilog_code
 
             print("\nGenerated Verilog Code:\n")
             print(self.verilog_code)

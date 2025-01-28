@@ -52,7 +52,7 @@ async def run(request: Request) -> Dict[str, str]:
 @app.post("/v1/models/verilog", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
-        question = f"create a verilog file based on this prompt: {request.question}REMEMBER, DONT USE ARRAYS LIKE [X:Y] OR TERNARY OPERATIONS LIKE ? OR :, AND ALWAYS TEST YOUR VERILOG CODE ANALYZING THE TRUTH TABLE COMPARING IT TO THE REQUESTED CIRCUIT."
+        question = f"Help the user, here is his prompt: {request.question}"
         print(f"Received question: {question}")
         response = verilog_generation(question)
         
@@ -209,30 +209,30 @@ def verilog_generation(query):
         answer = response.content
         # print(f"Extracted response: {answer}")
         
-        match = re.search(r'```(.*?)```', answer, re.DOTALL)
-        if match:
-            verilog_code = match.group(1).strip()
+        #match = re.search(r'```(.*?)```', answer, re.DOTALL)
+        #if match:
+        #    verilog_code = match.group(1).strip()
             # print("-----------------------------")
             # print(match.group(0).strip())
             
-            module_match = re.search(r'(module.*?endmodule)', verilog_code, re.DOTALL)
-            if module_match:
-                module_code = module_match.group(1).strip()
+        #    module_match = re.search(r'(module.*?endmodule)', verilog_code, re.DOTALL)
+        #    if module_match:
+        #        module_code = module_match.group(1).strip()
                 # print(f"Extracted module code: {module_code}")
-                return module_code
-            else:
+        #        return module_code
+        #    else:
                 # print(f"No module block found. Extracted Verilog code: {verilog_code}")
-                return verilog_code
-        else:
-            module_match = re.search(r'(module.*?endmodule)', answer, re.DOTALL)
-            if module_match:
-                module_code = module_match.group(1).strip()
+        #        return verilog_code
+        #else:
+        #    module_match = re.search(r'(module.*?endmodule)', answer, re.DOTALL)
+        #    if module_match:
+        #        module_code = module_match.group(1).strip()
                 # print(f"Extracted module code: {module_code}")
-                return module_code
-            else:
+        #        return module_code
+        #    else:
                 # print(f"No module block found. Extracted Verilog code: {verilog_code}")
-                return verilog_code
-
+        #        return verilog_code
+        return answer
     except Exception as e:
         print(f"Error in verilog_generation: {e}")
         raise e
