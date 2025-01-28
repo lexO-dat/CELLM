@@ -1,4 +1,4 @@
-FROM deepseek-r1:7b
+FROM deepseek-r1:32b
 PARAMETER temperature 0.7
 PARAMETER stop <|start_header_id|>
 PARAMETER stop <|end_header_id|>
@@ -185,14 +185,14 @@ module top(
 endmodule
 
 == Forbidden Patterns
-✖ Sequential constructs:
+ Sequential constructs:
    always @(posedge clk)
-✖ Incomplete cases:
+ Incomplete cases:
    case({A,B})
      2'b00: Y=0;
    endcase
-✖ Bus declarations: 
+ Bus declarations: 
    input [2:0] ABC;
-✖ Ternary operators:
+ Ternary operators:
    assign Y = (A>B) ? 1 : 0;
 """

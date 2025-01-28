@@ -199,7 +199,7 @@ class ChatApp:
             print(absolute_attachment_path)
 
             response = requests.post(
-                "http://localhost:8002/v1/mail/send",
+                "http://localhost:8989/v1/mail/send",
                 json={
                     "destinatario": email,
                     "subject": "Sending all the generated files by geneticAI app",

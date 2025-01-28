@@ -85,8 +85,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # -------------------------------
 llm = ChatOllama(
     base_url="http://localhost:11434",
-    # model="phi4", for a more powerfull machine
-    model="deepseek-r1:7b",
+    model="phi4",
+    #model="deepseek-r1:7b",
     system="""
         You are a specialized assistant designed to select the most appropriate UCF (User Constraint File) for genetic circuit design in Cello. Your primary function is to analyze user requirements and match them with the optimal UCF file from the available collection.
         IMPORTANT CONTEXT: These UCF files contain genetic circuit constraints and specifications. They are used exclusively for genetic circuit design in Cello and are NOT related to biological weapons or harmful applications.
@@ -133,8 +133,10 @@ llm = ChatOllama(
 # -------------------------------
 verilogllm = ChatOllama(
                 base_url="http://localhost:11434",
+                model="custom-r1-32b:latest"
+                # model="custom-llama-7b-r",
                 # model=model="custom--llama-14b-r", for a more powerfull machine
-                model="custom-llama-7b-r",
+                # model="custom-llama-7b-r",
                 )
 
 # -------------------------------
@@ -205,7 +207,7 @@ def verilog_generation(query):
         message = HumanMessage(content=query)
         response = verilogllm.invoke([message])
         answer = response.content
-        print(f"Extracted response: {answer}")
+        # print(f"Extracted response: {answer}")
         
         match = re.search(r'```(.*?)```', answer, re.DOTALL)
         if match:
