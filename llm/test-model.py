@@ -157,7 +157,7 @@ class ChatFlow:
             #    self.verilog_code = match.group(1)
             #else:
             #    self.verilog_code = verilog_code
-
+            self.verilog_code = verilog_code
             print("\nGenerated Verilog Code:\n")
             print(self.verilog_code)
             print("\nVerilog generation complete.\n")
