@@ -7,7 +7,7 @@ import re
 UCF_API_URL = "http://localhost:8001/v1/models/ucf"
 VERILOG_API_URL = "http://localhost:8001/v1/models/verilog"
 CELLO_API_URL = "http://localhost:8000/v1/run"
-MAIL_API_URL  = "http://localhost:8002/v1/mail/send"
+MAIL_API_URL  = "http://localhost:8989/v1/mail/send"
 
 # Example UCF Options
 UCF_OPTIONS = [
@@ -33,32 +33,28 @@ class ChatFlow:
         print("Welcome to Genetic Design Chat!")
         print("---------------------------------\n")
         
-        # Step 1. Ask for auto or manual UCF
+        # Manual or automatic ucf
         self.ask_ucf_mode()
-        
-        # Step 2. Confirm we have a selected UCF
         print(f"\nUCF Selected: {self.selected_ucf_name}\n")
         
-        # Step 3. Interact with user about Verilog design
+        # Verilog design
         self.handle_verilog_interaction()
-        
-        # Step 4. Once user is done, we generate the final Verilog code
         self.generate_verilog()
         
-        # Step 5. Send everything to cello
+        # Cello
         self.run_cello()
         
-        # Step 6. Ask to send email
+        # Email
         self.ask_send_email()
 
         print("\nAll done! If you want to start a new design, just restart the chat.\n")
 
     # -------------------------------
-    # Step 1. Ask how to pick a UCF
+    # how to pick a UCF
     # -------------------------------
     def ask_ucf_mode(self):
         while True:
-            choice = input("Do you want to automatically select a UCF based on your design specs? (y/n): ").strip().lower()
+            choice = input("\n Do you want to automatically select a UCF based on your design specs? (y/n): ").strip().lower()
             if choice == 'y':
                 self.auto_select_ucf()
                 break
@@ -110,12 +106,11 @@ class ChatFlow:
                 print("Invalid input. Please enter a valid number.")
 
     # --------------------------------
-    # Step 3. Interact about Verilog
+    #   Verilog
     # --------------------------------
     def handle_verilog_interaction(self):
         """
-        In a real scenario, you'd have a loop here to ask clarifying questions
-        until the user is satisfied. For simplicity, we'll do one big user prompt.
+        TODO: have a loop here to ask clarifying questions until the user is satisfied.
         """
         print("\nNow let's prepare to generate the Verilog code.")
         print("Feel free to specify your logic, inputs/outputs, etc.\n")
@@ -126,14 +121,13 @@ class ChatFlow:
                 break
             elif proceed == 'n':
                 print("Ok. Please refine your design. Type in any notes or constraints you'd like.\n")
-                # You could store these additional constraints in memory if needed
                 user_refinement = input("User refinement: ")
-                # Potentially call your LLM again to refine. For brevity, we do nothing extra here.
+                # Here maybe call again the llm to refine the code.
             else:
                 print("Please answer with 'y' or 'n'.")
 
     # -------------------------------------------
-    # Step 4. Generate Verilog from final prompt
+    # Generate Verilog from final prompt
     # -------------------------------------------
     def generate_verilog(self):
         final_prompt = input("Please describe your final circuit design for Verilog generation: ").strip()
@@ -160,7 +154,7 @@ class ChatFlow:
             self.verilog_code = ""
 
     # -------------------------------------------
-    # Step 5. Call Cello with UCF + Verilog
+    # Call Cello with UCF + Verilog
     # -------------------------------------------
     def run_cello(self):
         if not self.verilog_code:
@@ -207,7 +201,7 @@ class ChatFlow:
         return 1  # default fallback
 
     # --------------------------------------
-    # Step 6. Offer to email the results
+    # Offer to email the results
     # --------------------------------------
     def ask_send_email(self):
         if not (self.folder_name and self.output_files):
