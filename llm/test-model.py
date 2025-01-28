@@ -130,6 +130,9 @@ class ChatFlow:
                         # FIXED: Allow exiting even if no module is found
                         if self.verilog_code:
                             print("\nExiting refinement mode. Found a Verilog module.")
+                            print("\n--- Extracted Verilog Module ---")
+                            print(self.verilog_code)
+                            print("---------------------------------\n")
                         else:
                             print("\nExiting refinement mode. No Verilog module detected.")
                         break
