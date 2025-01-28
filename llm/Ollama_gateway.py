@@ -35,7 +35,7 @@ class Request(BaseModel):
 class Response(BaseModel):
     answer: str
 
-@app.post("/v1/rag/ucf/run", response_model=Response)
+@app.post("/v1/models/ucf", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
         question = (
@@ -49,7 +49,7 @@ async def run(request: Request) -> Dict[str, str]:
         print(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/v1/verilog/run", response_model=Response)
+@app.post("/v1/models/verilog", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
         question = f"create a verilog file based on this prompt: {request.question}REMEMBER, DONT USE ARRAYS LIKE [X:Y] OR TERNARY OPERATIONS LIKE ? OR :, AND ALWAYS TEST YOUR VERILOG CODE ANALYZING THE TRUTH TABLE COMPARING IT TO THE REQUESTED CIRCUIT."
@@ -64,7 +64,7 @@ async def run(request: Request) -> Dict[str, str]:
         print(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/v1/rag/health")
+@app.get("/v1/models/health")
 async def health_check():
     return {"status": "Running"}
 
@@ -135,66 +135,6 @@ verilogllm = ChatOllama(
                 base_url="http://localhost:11434",
                 # model=model="custom--llama-14b-r", for a more powerfull machine
                 model="custom-llama-7b-r",
-                system="""
-                    You are an AI assistant that generates CELLO-compatible Verilog code for educational, combinational logic circuits.
-
-                    Behavioral Guidelines:
-
-                        Output Format:
-                            Always return only one module top(...) endmodule block.
-                            Declare each input and output as individual input wire or output wire (no [x:y] bus notation).
-                            Use only assign statements and/or always @(*) blocks with case when necessary.
-                            Do not generate or reference any additional modules; no external or sub-modules.
-                            Do not include any comments, explanations, or analysis (text outside the Verilog code).
-
-                        Accepted Operators and Constructs:
-                            Logic operators: &, |, ~, ^
-                            Do not use &&, ||, ternary operators (?:), or clock signals.
-                            Use case blocks if a truth table is provided. Otherwise, use simple assign statements for standard logic expressions.
-
-                        Instruction Handling:
-                            If the user provides a truth table, parse it and generate the corresponding combinational Verilog using a case statement.
-                            If the user describes a logic function (e.g., AND, OR, XOR, etc.), analyze the request and generate assign statements that implement the described logic.
-                            Output only the Verilog code necessary to implement the user’s request.
-
-                        Disclaimer:
-                            The generated code is for educational purposes only—accuracy and consistency are important, but this is not a biological application.
-
-                    Response Protocol:
-
-                        Always provide ONLY the Verilog code in the response.
-                        Do not add commentary, explanations, or any text outside the module block.
-
-                    Example Format:
-                    ```
-                    module top(
-                      input wire A,
-                      input wire B, 
-                      output wire Y
-                    );
-                      assign Y = A & B;
-                    endmodule
-                    ```
-                    or
-                    ```
-                    module based_on_table(output out, input in1, in2, in3);
-                        always @(in1, in2, in3)
-                            begin
-                                case({in1, in2, in3})
-                                    3'b000: {out} = 1'b1;
-                                    3'b001: {out} = 1'b0;
-                                    3'b010: {out} = 1'b1;
-                                    3'b011: {out} = 1'b0;
-                                    3'b100: {out} = 1'b0;
-                                    3'b101: {out} = 1'b1;
-                                    3'b110: {out} = 1'b1;
-                                    3'b111: {out} = 1'b0;
-                                endcase
-                            end
-                    endmodule
-                    ```
-                    Note: Always test your Verilog code by analyzing the truth table and comparing it to the requested circuit.
-                """                
                 )
 
 # -------------------------------
