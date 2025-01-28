@@ -35,7 +35,7 @@ class Request(BaseModel):
 class Response(BaseModel):
     answer: str
 
-@app.post("/v1/rag/ucf/run", response_model=Response)
+@app.post("/v1/models/ucf", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
         question = (
@@ -49,7 +49,7 @@ async def run(request: Request) -> Dict[str, str]:
         print(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/v1/verilog/run", response_model=Response)
+@app.post("/v1/models/verilog", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
         question = f"create a verilog file based on this prompt: {request.question}REMEMBER, DONT USE ARRAYS LIKE [X:Y] OR TERNARY OPERATIONS LIKE ? OR :, AND ALWAYS TEST YOUR VERILOG CODE ANALYZING THE TRUTH TABLE COMPARING IT TO THE REQUESTED CIRCUIT."
@@ -64,7 +64,7 @@ async def run(request: Request) -> Dict[str, str]:
         print(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/v1/rag/health")
+@app.get("/v1/models/health")
 async def health_check():
     return {"status": "Running"}
 
@@ -135,7 +135,9 @@ verilogllm = ChatOllama(
                 base_url="http://localhost:11434",
                 model="custom-r1-32b:latest"
                 # model="custom-llama-7b-r",
-)
+                # model=model="custom--llama-14b-r", for a more powerfull machine
+                # model="custom-llama-7b-r",
+                )
 
 # -------------------------------
 # Ollama Embedding Model Configuration
@@ -240,3 +242,20 @@ def verilog_generation(query):
 
 if __name__ == "__main__":
     uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8001, reload=True)
+
+
+# Example prompts:
+
+"""
+I want to create a genetic circuit based on this truth table: \n Inputs  | Outputs \n 0  0  0  |  0  1 \n 0  0  1  |  1  1 \n  0  1  0  |  0  0 \n 0  1  1  |  1  1 \n 1  0  0  |  1  1 \n 1  0  1  |  1  0 \n  1  1  0  |  0  1 \n  1  1  1  |  0  0 
+"""
+
+"""
+I want to create a genetic circuit based on this truth table: \n Inputs | Outputs \n 0 0 | 0 \n 0 1 | 1 \n 1 0 | 1 \n 1 1 | 0
+"""
+
+"""
+Hi, I would like you to design a genetic circuit with three inputs: LacI, AraC and TetR. The output should be YFP, so that this is activated only when all three inputs (LacI, AraC and TetR) are present (i.e. “on”).
+"""
+
+
