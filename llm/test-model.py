@@ -7,7 +7,7 @@ import re
 UCF_API_URL = "http://localhost:8001/v1/models/ucf"
 VERILOG_API_URL = "http://localhost:8001/v1/models/verilog"
 CELLO_API_URL = "http://localhost:8000/v1/run"
-MAIL_API_URL  = "http://localhost:8989/v1/mail/send"
+MAIL_API_URL = "http://localhost:8989/v1/mail/send"
 
 # Example UCF Options
 UCF_OPTIONS = [
@@ -142,16 +142,34 @@ class ChatFlow:
                         data = resp.json()
                         ai_answer = data.get("answer", "")
                         
-                        module_code = self.extract_verilog_module(ai_answer)
+                        # Split into thinking and response parts
+                        thinking_part, response_part = "", ai_answer
+                        if '</think>' in ai_answer:
+                            parts = ai_answer.split('</think>', 1)
+                            thinking_part = parts[0].strip()
+                            response_part = parts[1].strip()
+                        
+                        # Print thinking part if present
+                        if thinking_part:
+                            print("\n----- Model Thinking -----")
+                            print(thinking_part)
+                            print("---------------------------\n")
+                        
+                        # Print response part
+                        print("\n----- Model Response -----")
+                        print(response_part.strip())
+                        print("---------------------------\n")
+                        
+                        # Extract module from response part
+                        module_code = self.extract_verilog_module(response_part)
                         if module_code:
                             self.verilog_code = module_code
                             print("\n--- Extracted Verilog Module ---")
-                            print(self.verilog_code)
+                            print(module_code)
                             print("---------------------------------\n")
                         else:
-                            print("\n--- Model Response ---")
-                            print(ai_answer)
-                            print("-----------------------\n")
+                            print("No Verilog module detected in the response.\n")
+                            self.verilog_code = None
                     except Exception as e:
                         print(f"Error communicating with Verilog API: {e}")
             else:
@@ -163,7 +181,7 @@ class ChatFlow:
         """
         mod_pattern = r'(module\s+.*?endmodule)'
         match = re.search(mod_pattern, text, re.DOTALL)
-        return match.group(1) if match else ""
+        return match.group(1).strip() if match else ""
 
     # -------------------------------------------
     # Call Cello with UCF + Verilog
