@@ -15,7 +15,7 @@ services:
         ipv4_address: 172.28.0.3
 
   cello:
-    build: lexodat2111/cello-api
+    image: lexodat2111/cello-api
     ports:
       - "8000:8000"
     networks:
