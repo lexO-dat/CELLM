@@ -1,5 +1,6 @@
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
+from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from supabase import create_client, Client
@@ -139,6 +140,11 @@ verilogllm = ChatOllama(
                 # model="custom-llama-7b-r",
                 )
 
+verilog_conversation = ConversationChain(
+    llm=verilogllm,
+    memory=ConversationBufferMemory(memory_key="verilog_history", return_messages=True)
+)
+
 # -------------------------------
 # Ollama Embedding Model Configuration
 # -------------------------------
@@ -237,9 +243,29 @@ def verilog_generation(query):
         print(f"Error in verilog_generation: {e}")
         raise e
 
+def verilog_loop():
+    print("Starting Verilog conversation loop. Type 'done' to exit.")
+    while True:
+        try:
+            user_input = input("User: ")
+            if user_input.strip().lower() == 'done':
+                print("Exiting conversation loop.")
+                break
+            response = verilog_conversation.run(user_input)
+            print(f"Assistant: {response}")
+        except KeyboardInterrupt:
+            print("\nExiting conversation loop.")
+            break
+        except Exception as e:
+            print(f"Error: {str(e)}")
+
 
 if __name__ == "__main__":
-    uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8001, reload=True)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "verilog_loop":
+        verilog_loop()
+    else:
+        uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8001, reload=True)
 
 
 # Example prompts:
