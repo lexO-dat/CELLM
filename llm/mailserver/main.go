@@ -160,7 +160,7 @@ func main() {
 curl -X POST http://localhost:8002/v1/mail/send \
      -H "Content-Type: application/json" \
      -d '{
-           "destinatario": "utherpendragon1.marcelo@gmail.com",
+           "destinatario": "a@gmail.com",
            "subject": "Sending all the generated files by geneticAI app",
            "attachmentPath": "/home/lexo/Desktop/Practica/Downloads/temp_c00297a3f8824a3aafe95fdd8e30f396"
          }'
