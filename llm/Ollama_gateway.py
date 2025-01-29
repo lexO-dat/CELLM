@@ -2,6 +2,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationalRetrievalChain
 from supabase import create_client, Client
 from langchain_core.messages import HumanMessage
@@ -129,6 +130,25 @@ llm = ChatOllama(
     """
 )
 
+verilog_template = """The following is a conversation about Verilog code generation. 
+The assistant should help create and refine Verilog modules based on genetic circuit requirements.
+
+Current conversation:
+{history}
+User: {input}
+Assistant:"""
+
+VERILOG_PROMPT = PromptTemplate(
+    input_variables=["history", "input"], 
+    template=verilog_template
+)
+
+verilog_memory = ConversationBufferMemory(
+    memory_key="history",
+    return_messages=True
+)
+
+
 # -------------------------------
 # Verilog Ollama model configuration
 # -------------------------------
@@ -142,7 +162,9 @@ verilogllm = ChatOllama(
 
 verilog_conversation = ConversationChain(
     llm=verilogllm,
-    memory=ConversationBufferMemory(memory_key="verilog_history", return_messages=True)
+    prompt=VERILOG_PROMPT,
+    memory=verilog_memory,
+    verbose=False
 )
 
 # -------------------------------
