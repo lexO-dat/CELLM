@@ -52,7 +52,7 @@ async def run(request: Request) -> Dict[str, str]:
 @app.post("/v1/models/verilog", response_model=Response)
 async def run(request: Request) -> Dict[str, str]:
     try:
-        question = f"Help the user, here is his prompt: {request.question}"
+        question = f"{request.question}"
         print(f"Received question: {question}")
         response = verilog_generation(question)
         
@@ -133,7 +133,7 @@ llm = ChatOllama(
 # -------------------------------
 verilogllm = ChatOllama(
                 base_url="http://localhost:11434",
-                model="custom-r1-32b:latest"
+                model="custom-r1"
                 # model="custom-llama-7b-r",
                 # model=model="custom--llama-14b-r", for a more powerfull machine
                 # model="custom-llama-7b-r",
@@ -236,8 +236,6 @@ def verilog_generation(query):
     except Exception as e:
         print(f"Error in verilog_generation: {e}")
         raise e
-
-
 
 
 if __name__ == "__main__":
