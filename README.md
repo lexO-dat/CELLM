@@ -5,19 +5,20 @@ Synthetic biology is an interdisciplinary field that combines biology, engineeri
 This project is focused on developing an automated system to analyze and create genetic circuits using tools such as CELLO and artificial intelligence.
 
 # Folder structure:
-CELLM/ \n
-├─ App/ \n
-│  ├─ cello/ -> all the cello files \n
-├─ llm/ \n
-│  ├─ ollama/ \n
-│  │  ├─ custom-llama -> the custom-llama configuration \n
-│  ├─ mailserver/ \n
-│  │  ├─ main.go -> mailserver main script \n 
-│  ├─ upload.py -> script to upload files \n
-│  ├─ Ollama_gateway.py -> gateway \n
-├─ frontend/ -> react frontend folder \n
-├─ requirements.txt \n
-├─ cli.py -> cli script \n
+# CELLM
+CELLM/
+├── App/
+│ ├── cello/ # All the cello files
+├── llm/
+│ ├── ollama/
+│ │ └── custom-llama # Custom-llama configuration
+│ ├── mailserver/
+│ │ └── main.go # Mailserver main script
+│ ├── upload.py # Script to upload files
+│ └── Ollama_gateway.py # Gateway
+├── frontend/ # React frontend folder
+├── requirements.txt
+└── cli.py # CLI script
 
 # System requirements:
 - If you want to use exactly the same model i used:
