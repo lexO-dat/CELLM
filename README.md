@@ -21,12 +21,12 @@ CELLM/ \n
 
 # System requirements:
 - If you want to use exactly the same model i used:
-Minimum: 64Gb RAM, M1 ultra / Intel Core i9-12900K, 100Gb disk
-Recommended: 128GB ram, M1 ultra / Intel Core i9-12900K, 100Gb disk
+  -  Minimum: 64Gb RAM, M1 ultra / Intel Core i9-12900K, 100Gb disk
+  -  Recommended: 128GB ram, M1 ultra / Intel Core i9-12900K, 100Gb disk
 
 - If you want to run a low parameter model:
-Minimum: 16Gb RAM, Intel core i5-11400h / M1, 40Gb disk
-Recommended: 32Gb RAM, Intel core i5-11400h / M1, 40Gb disk
+  -  Minimum: 16Gb RAM, Intel core i5-11400h / M1, 40Gb disk
+  -  Recommended: 32Gb RAM, Intel core i5-11400h / M1, 40Gb disk
 
 NOTE: if you want to use other model you have to change:
 - The custom-llama file import model.
