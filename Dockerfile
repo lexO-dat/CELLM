@@ -9,4 +9,4 @@ COPY . /app
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "cli.py"]
+CMD ["python", "cli-test.py"]
