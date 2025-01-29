@@ -184,6 +184,3 @@ If you have questions, suggestions, or just want to connect:
 [![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?style=for-the-badge&logo=github)](https://github.com/lexO-dat)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/lucasabello/)
 [![Email](https://img.shields.io/badge/Email-Me%20Here-D14836?style=for-the-badge&logo=gmail)](mailto:lucas.abello@mail.udp.cl)
-
-For project-specific inquiries:
-🔗 Open a GitHub Issue on this repository.
