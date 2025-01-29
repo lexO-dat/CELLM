@@ -180,32 +180,31 @@ def chat_response(query: str) -> str:
         print(f"Chat response error: {e}")
         return "Eco1C1G1T1"
 
+memory_req = ConversationBufferMemory(memory_key="history")
+chain_req = ConversationChain(
+        llm=verilog_llm,
+        prompt=VERILOG_PROMPT,
+        memory=memory_req,
+        verbose=False
+    )
+
 def verilog_generation(query: str) -> str:
     """Handle Verilog generation with isolated conversation context"""
     try:
-        # Create fresh conversation chain for each request
-        memory = ConversationBufferMemory(memory_key="history")
-        chain = ConversationChain(
-            llm=verilog_llm,
-            prompt=VERILOG_PROMPT,
-            memory=memory,
-            verbose=False
-        )
-        
-        response = chain.run(input=query)
+        response = chain_req.run(input=query)
         
         # Extract code block using improved regex pattern
-        code_match = re.search(r'```(?:verilog)?\s*(.*?)\s*```', response, re.DOTALL)
-        if code_match:
-            clean_code = re.sub(r'^\s*\n', '', code_match.group(1).strip())
-            return clean_code
+        # code_match = re.search(r'```(?:verilog)?\s*(.*?)\s*```', response, re.DOTALL)
+        # if code_match:
+        #     clean_code = re.sub(r'^\s*\n', '', code_match.group(1).strip())
+        #     return clean_code
         
         # Fallback to module detection
-        module_match = re.search(r'(module\s+.*?endmodule)', response, re.DOTALL)
-        if module_match:
-            return module_match.group(1).strip()
+        # module_match = re.search(r'(module\s+.*?endmodule)', response, re.DOTALL)
+        # if module_match:
+        #     return module_match.group(1).strip()
             
-        return response.strip()
+        return response
         
     except Exception as e:
         print(f"Verilog generation error: {e}")
