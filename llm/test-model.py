@@ -7,7 +7,7 @@ import re
 UCF_API_URL = "http://localhost:8001/v1/models/ucf"
 VERILOG_API_URL = "http://localhost:8001/v1/models/verilog"
 CELLO_API_URL = "http://localhost:8000/v1/run"
-MAIL_API_URL  = "http://localhost:8002/v1/mail/send"
+MAIL_API_URL = "http://localhost:8989/v1/mail/send"
 
 # Example UCF Options
 UCF_OPTIONS = [
@@ -33,32 +33,27 @@ class ChatFlow:
         print("Welcome to Genetic Design Chat!")
         print("---------------------------------\n")
         
-        # Step 1. Ask for auto or manual UCF
+        # Manual or automatic UCF
         self.ask_ucf_mode()
-        
-        # Step 2. Confirm we have a selected UCF
         print(f"\nUCF Selected: {self.selected_ucf_name}\n")
         
-        # Step 3. Interact with user about Verilog design
+        # Verilog design
         self.handle_verilog_interaction()
         
-        # Step 4. Once user is done, we generate the final Verilog code
-        self.generate_verilog()
-        
-        # Step 5. Send everything to cello
+        # Cello
         self.run_cello()
         
-        # Step 6. Ask to send email
+        # Email
         self.ask_send_email()
 
         print("\nAll done! If you want to start a new design, just restart the chat.\n")
 
     # -------------------------------
-    # Step 1. Ask how to pick a UCF
+    # how to pick a UCF
     # -------------------------------
     def ask_ucf_mode(self):
         while True:
-            choice = input("Do you want to automatically select a UCF based on your design specs? (y/n): ").strip().lower()
+            choice = input("\n Do you want to automatically select a UCF based on your design specs? (y/n): ").strip().lower()
             if choice == 'y':
                 self.auto_select_ucf()
                 break
@@ -78,7 +73,7 @@ class ChatFlow:
         try:
             resp = requests.post(UCF_API_URL, json=payload)
             resp.raise_for_status()
-            data = resp.json()  # => { "answer": "Eco1C1G1T1" } or something similar
+            data = resp.json()  # { "answer": "Eco1C1G1T1" } or something similar
             answer = data.get("answer", "Eco1C1G1T1")
             # Just store it
             self.selected_ucf_name = answer
@@ -110,57 +105,86 @@ class ChatFlow:
                 print("Invalid input. Please enter a valid number.")
 
     # --------------------------------
-    # Step 3. Interact about Verilog
+    #   Verilog Interaction (fixed)
     # --------------------------------
     def handle_verilog_interaction(self):
-        """
-        In a real scenario, you'd have a loop here to ask clarifying questions
-        until the user is satisfied. For simplicity, we'll do one big user prompt.
-        """
-        print("\nNow let's prepare to generate the Verilog code.")
-        print("Feel free to specify your logic, inputs/outputs, etc.\n")
-        
+        print("\nNow let's refine your Verilog design.")
+        print("You can ask questions about logic, inputs/outputs, truth table, etc.\n")
+
         while True:
-            proceed = input("Are you ready to generate your Verilog? (y/n): ").strip().lower()
-            if proceed == 'y':
-                break
-            elif proceed == 'n':
-                print("Ok. Please refine your design. Type in any notes or constraints you'd like.\n")
-                # You could store these additional constraints in memory if needed
-                user_refinement = input("User refinement: ")
-                # Potentially call your LLM again to refine. For brevity, we do nothing extra here.
-            else:
-                print("Please answer with 'y' or 'n'.")
+            user_action = input("\nType 'r' to start refining your Verilog code or 'done' to finish: ").strip().lower()
 
-    # -------------------------------------------
-    # Step 4. Generate Verilog from final prompt
-    # -------------------------------------------
-    def generate_verilog(self):
-        final_prompt = input("Please describe your final circuit design for Verilog generation: ").strip()
-        payload = {"question": final_prompt}
-        try:
-            resp = requests.post(VERILOG_API_URL, json=payload)
-            resp.raise_for_status()
-            data = resp.json()   # => { "answer": "... verilog code ..." }
-            verilog_code = data.get("answer", "")
+            if user_action == 'done':
+                # FIXED: Let the user proceed even if no verilog code is found
+                if self.verilog_code:
+                    print("\nProceeding with the generated Verilog code.")
+                else:
+                    print("\nNo Verilog code found. Proceeding without it.")
+                return
             
-            # Extract `module ... endmodule` if needed
-            mod_pattern = r'(module\s+.*?endmodule)'
-            match = re.search(mod_pattern, verilog_code, re.DOTALL)
-            if match:
-                self.verilog_code = match.group(1)
+            elif user_action == 'r':
+                print("\nEntering refinement mode. You can now chat with the model. Type 'done' when finished.\n")
+                while True:
+                    user_input = input("Your question/refinement (or 'done' to finish): ").strip()
+                    if user_input.lower() == 'done':
+                        # FIXED: Allow exiting even if no module is found
+                        if self.verilog_code:
+                            print("\nExiting refinement mode. Found a Verilog module.")
+                            print("\n--- Extracted Verilog Module ---")
+                            print(self.verilog_code)
+                            print("---------------------------------\n")
+                        else:
+                            print("\nExiting refinement mode. No Verilog module detected.")
+                        break
+                    try:
+                        resp = requests.post(VERILOG_API_URL, json={"question": user_input})
+                        resp.raise_for_status()
+                        data = resp.json()
+                        ai_answer = data.get("answer", "")
+                        
+                        # Split into thinking and response parts
+                        thinking_part, response_part = "", ai_answer
+                        if '</think>' in ai_answer:
+                            parts = ai_answer.split('</think>', 1)
+                            thinking_part = parts[0].strip()
+                            response_part = parts[1].strip()
+                        
+                        # Print thinking part if present
+                        if thinking_part:
+                            print("\n----- Model Thinking -----")
+                            print(thinking_part)
+                            print("---------------------------\n")
+                        
+                        # Print response part
+                        print("\n----- Model Response -----")
+                        print(response_part.strip())
+                        print("---------------------------\n")
+                        
+                        # Extract module from response part
+                        module_code = self.extract_verilog_module(response_part)
+                        if module_code:
+                            self.verilog_code = module_code
+                            print("\n--- Extracted Verilog Module ---")
+                            print(module_code)
+                            print("---------------------------------\n")
+                        else:
+                            print("No Verilog module detected in the response.\n")
+                            self.verilog_code = None
+                    except Exception as e:
+                        print(f"Error communicating with Verilog API: {e}")
             else:
-                self.verilog_code = verilog_code
+                print("Invalid input. Please type 'r' to refine or 'done' to proceed.")
 
-            print("\nGenerated Verilog Code:\n")
-            print(self.verilog_code)
-            print("\nVerilog generation complete.\n")
-        except Exception as e:
-            print(f"Error generating Verilog code: {e}")
-            self.verilog_code = ""
+    def extract_verilog_module(self, text: str) -> str:
+        """
+        Extracts the first Verilog module block from the given text.
+        """
+        mod_pattern = r'(module\s+.*?endmodule)'
+        match = re.search(mod_pattern, text, re.DOTALL)
+        return match.group(1).strip() if match else ""
 
     # -------------------------------------------
-    # Step 5. Call Cello with UCF + Verilog
+    # Call Cello with UCF + Verilog
     # -------------------------------------------
     def run_cello(self):
         if not self.verilog_code:
@@ -197,17 +221,13 @@ class ChatFlow:
             print(f"Error calling Cello API: {e}")
 
     def map_ucf_to_index(self, ucf_name: str) -> int:
-        """
-        If your Cello backend expects an ID for the UCF index,
-        you can map them here. This is just a simple example.
-        """
         for entry in UCF_OPTIONS:
             if entry["name"] == ucf_name:
                 return entry["id"]
         return 1  # default fallback
 
     # --------------------------------------
-    # Step 6. Offer to email the results
+    # Offer to email the results
     # --------------------------------------
     def ask_send_email(self):
         if not (self.folder_name and self.output_files):
@@ -228,7 +248,6 @@ class ChatFlow:
 
     def send_email(self, email: str):
         try:
-            # For demonstration, assume the files are in a "Downloads" folder
             attachment_path = f"Downloads/{self.folder_name}"
             payload = {
                 "destinatario": email,
