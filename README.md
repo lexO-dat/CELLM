@@ -4,22 +4,6 @@ Synthetic biology is an interdisciplinary field that combines biology, engineeri
 
 This project is focused on developing an automated system to analyze and create genetic circuits using tools such as CELLO and artificial intelligence.
 
-# Folder structure:
-# CELLM
-CELLM/
-├── App/
-│ ├── cello/ # All the cello files
-├── llm/
-│ ├── ollama/
-│ │ └── custom-llama # Custom-llama configuration
-│ ├── mailserver/
-│ │ └── main.go # Mailserver main script
-│ ├── upload.py # Script to upload files
-│ └── Ollama_gateway.py # Gateway
-├── frontend/ # React frontend folder
-├── requirements.txt
-└── cli.py # CLI script
-
 # System requirements:
 - If you want to use exactly the same model i used:
   -  Minimum: 64Gb RAM, M1 ultra / Intel Core i9-12900K, 100Gb disk
@@ -34,8 +18,8 @@ NOTE: if you want to use other model you have to change:
 - The Ollama_gateway called models
 
 For that:
-Fist go to the llm/ollama folder and change the FROM import to the new model, for example: FROM deepseek-r1:7b
-Then go back to the llm/ folder and change the base_url of the model you change ( i recommend a reasonning model for the verilog and a simple model for the ucf)
+- Fist go to the llm/ollama folder and change the FROM import to the new model, for example: FROM deepseek-r1:7b
+- Then go back to the llm/ folder and change the base_url of the model you change ( i recommend a reasonning model for the verilog and a simple model for the ucf)
 
 # Prerequisites:
 ## Ollama:
@@ -194,3 +178,12 @@ python cli.py
 ```
 
 All the information about how to run this modules is on the prerequisites section.
+
+If you have questions, suggestions, or just want to connect:
+
+[![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?style=for-the-badge&logo=github)](https://github.com/lexO-dat)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/lucasabello/)
+[![Email](https://img.shields.io/badge/Email-Me%20Here-D14836?style=for-the-badge&logo=gmail)](mailto:lucas.abello@mail.udp.cl)
+
+For project-specific inquiries:
+🔗 Open a GitHub Issue on this repository.
