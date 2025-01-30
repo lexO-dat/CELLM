@@ -1,7 +1,7 @@
 import requests
 import re
 import os
-import subprocess
+# import subprocess
 
 # --------------------------------------
 # UCF Model & Verilog Model Endpoints
@@ -29,10 +29,10 @@ class ChatFlow:
         self.output_files = []
         
         # Subprocess reference for the Go mail server
-        self.go_server_process = None
+        #self.go_server_process = None
 
         # Automatically start the Go mail server, just like the old code
-        self.start_go_server()
+        #self.start_go_server()
 
     def start(self):
         """
@@ -288,45 +288,45 @@ class ChatFlow:
     # ------------------------------------------------
     # Starting & Stopping Go Server
     # ------------------------------------------------
-    def start_go_server(self):
-        """
-        Start the Go mailserver in a subprocess. 
-        This replicates the first code's approach.
-        """
-        try:
-            mailserver_path = os.path.abspath("mailserver")
-            if not os.path.isdir(mailserver_path):
-                raise FileNotFoundError(f"Mailserver folder not found at {mailserver_path}")
+    # def start_go_server(self):
+    # """
+    #    Start the Go mailserver in a subprocess. 
+    #    This replicates the first code's approach.
+    #    """
+    #    try:
+    #        mailserver_path = os.path.abspath("mailserver")
+    #        if not os.path.isdir(mailserver_path):
+    #            raise FileNotFoundError(f"Mailserver folder not found at {mailserver_path}")
 
-            self.go_server_process = subprocess.Popen(
-                ["go", "run", "main.go"],
-                cwd=mailserver_path,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            print(f"[MailServer] Go server is running in the background with PID {self.go_server_process.pid}")
-        except Exception as e:
-            print(f"Failed to start Go server: {e}")
-            self.go_server_process = None
+    #        self.go_server_process = subprocess.Popen(
+    #            ["go", "run", "main.go"],
+    #           cwd=mailserver_path,
+    #            stdout=subprocess.PIPE,
+    #            stderr=subprocess.PIPE,
+    #        )
+    #        print(f"[MailServer] Go server is running in the background with PID {self.go_server_process.pid}")
+    #    except Exception as e:
+    #        print(f"Failed to start Go server: {e}")
+    #        self.go_server_process = None
 
-    def stop_go_server(self):
-        """
-        Stop the Go server subprocess.
-        """
-        if self.go_server_process:
-            try:
-                self.go_server_process.terminate()
-                self.go_server_process.wait()
-                print("Go server has been terminated.")
-            except Exception as e:
-                print(f"Failed to stop Go server: {e}")
+    # def stop_go_server(self):
+    #     """
+    #     Stop the Go server subprocess.
+    #    """
+    #    if self.go_server_process:
+    #        try:
+    #            self.go_server_process.terminate()
+    #            self.go_server_process.wait()
+    #            print("Go server has been terminated.")
+    #        except Exception as e:
+    #            print(f"Failed to stop Go server: {e}")
 
-    def __del__(self):
-        self.stop_go_server()
+    # def __del__(self):
+    #    self.stop_go_server()
 
 if __name__ == "__main__":
     flow = ChatFlow()
-    try:
-        flow.start()
-    finally:
-        flow.stop_go_server()
+    # try:
+    flow.start()
+    # finally:
+    #    flow.stop_go_server()
