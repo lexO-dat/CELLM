@@ -151,10 +151,11 @@ To obtain an application-specific password for Gmail:
 then:
 ```bash
 go mod init mailserver && go mod tidy
+go run main.go &
 ```
 
-NOTE: this will build the go program to be used on the cli app, you need golang installed. To install it see the docs: [golang docs](https://go.dev/dl/)
-NOTE: when you execute the cli script the go server will start in the 8002 port.
+NOTE: this will build the go program to be used on the cli app, you need golang installed. To install it see the docs: [golang docs](https://go.dev/dl/). Also this will run the go server on the 8002 port on the background
+
 
 # Running the apps
 There are 2 options:
