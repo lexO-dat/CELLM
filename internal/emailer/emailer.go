@@ -19,15 +19,15 @@ func SendResults(recipient, folderName string) error {
 	}
 
 	content := `<!DOCTYPE html>
-<html>
-<head>
-	<title>Genetic Design Results</title>
-</head>
-<body>
-	<h1>Thank you for using CELLM!</h1>
-	<p>Your generated files are attached to this email.</p>
-</body>
-</html>`
+				<html>
+				<head>
+					<title>Genetic Design Results</title>
+				</head>
+				<body>
+					<h1>Thank you for using CELLM!</h1>
+					<p>Your generated files are attached to this email.</p>
+				</body>
+				</html>`
 
 	// Load environment variables.
 	if err := godotenv.Load(); err != nil {

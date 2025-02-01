@@ -30,7 +30,6 @@ var UCF_OPTIONS = []UCFOption{
 	{ID: 5, Name: "SC1C1G1T1"},
 }
 
-// ChatFlow holds the state of the conversation.
 type ChatFlow struct {
 	selectedUCFName string
 	verilogCode     string
@@ -38,12 +37,10 @@ type ChatFlow struct {
 	outputFiles     []string
 }
 
-// NewChatFlow returns a new ChatFlow instance.
 func NewChatFlow() *ChatFlow {
 	return &ChatFlow{}
 }
 
-// Start kicks off the conversation.
 func (cf *ChatFlow) Start() {
 	fmt.Println("Welcome to Genetic Design Chat!")
 	fmt.Println("---------------------------------\n")
@@ -82,11 +79,10 @@ func (cf *ChatFlow) autoSelectUCF() {
 	userSpec, _ := reader.ReadString('\n')
 	userSpec = strings.TrimSpace(userSpec)
 
-	// Call the UCF API client function.
 	answer, err := apiclient.AutoSelectUCF(userSpec)
 	if err != nil {
 		fmt.Println("Error from UCF API:", err)
-		answer = "Eco1C1G1T1" // fallback
+		answer = "Eco1C1G1T1"
 		fmt.Println("Falling back to default UCF: Eco1C1G1T1")
 	}
 	cf.selectedUCFName = answer
