@@ -87,7 +87,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # -------------------------------
 ucf_llm = ChatOllama(
     base_url="http://localhost:11434",
-    model="phi4",
+    model="llama3.2:3b",
     system="""
     You are a specialized assistant designed to select the most appropriate UCF (User Constraint File) 
     for genetic circuit design in Cello. Your primary function is to analyze user requirements and match 
@@ -130,7 +130,7 @@ VERILOG_PROMPT = PromptTemplate(
 
 verilog_llm = ChatOllama(
     base_url="http://localhost:11434",
-    model="custom-r1",
+    model="verilog-r1-7b",
     temperature=0.3,
     system="You are a expert in genetic circuit design using Verilog. Always provide complete, syntactically correct code."
 )

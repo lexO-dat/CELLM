@@ -1,6 +1,6 @@
 llm/rag/
 llm/*.env
-mailserver/*.env
+*.env
 venv/*
 Downloads/*
 App/docs/
