@@ -7,4 +7,7 @@ App/docs/
 App/celloVenv/
 App/cello/logs/*
 App/temp_outputs/*
+go.mod
+go.sum
 __pycache__/
+.vscode/

@@ -13,16 +13,33 @@ This project is focused on developing an automated system to analyze and create 
   -  Minimum: 16Gb RAM, Intel core i5-11400h / M1, 40Gb disk
   -  Recommended: 32Gb RAM, Intel core i5-11400h / M1, 40Gb disk
 
-NOTE: if you want to use other model you have to change:
-- The custom-llama file import model.
-- The Ollama_gateway called models
-
-For that:
-- Fist go to the llm/ollama folder and change the FROM import to the new model, for example: FROM deepseek-r1:7b
-- Then go back to the llm/ folder and change the base_url of the model you change ( i recommend a reasonning model for the verilog and a simple model for the ucf)
 
 # Prerequisites:
-## Ollama:
+## Ollama
+### Run Ollama with the docker images
+I have two docker images for this:
+- The first docker image is for low spects machines, to run the image just use:
+``` bash
+docker run \
+-p 8001:8001 \
+-e SUPABASE_URL=<URL> \
+-e SUPABASE_KEY=<KEY> \
+-d \
+lexodat2111/cellm-llm-light
+```
+- The other image is to use the model i used:
+``` bash
+docker run \
+-p 8001:8001 \
+-e SUPABASE_URL=<URL> \
+-e SUPABASE_KEY=<KEY> \
+-d \
+lexodat2111/cellm-llm
+```
+
+NOTE: this will install ollama into the container and also all the requirements for the ollama gateway, this will run the Ollama_gateway script on the 8001 port, to see info about the endpoints go to localhost:8001/docs
+
+### Run Ollama locally
 - To install Ollama, go to the [Ollama web page](https://ollama.com/) and follow the installation instructions in the documentation. (NOTE: if you have a NVIDIA gpu you have to configure the NVIDIA cuda drivers).
 - To execute Ollama run:
 ```
@@ -39,7 +56,6 @@ ollama pull mxbai-embed-large:latest
 NOTE: IT USES THE DEEPSEEK-R1:32B MODEL SO CHECK THE SYSTEM REQUIREMENT POINT.
 
 ## CELLO:
-- Python 3.11 version (if you want to run it locally).
 - You need Docker installed:
 Just run the command:
 ``` bash
@@ -73,11 +89,11 @@ SUPABASE_KEY="SUPABASE KEY"
 ```
 
 ## Upload files to supabase vector database
-- First, you must obtain all the supabase keys listed in the RAG System section.
-- Then, you have to move your txt file to the llm folder.
-- In the upload code change the txt name on the "loader" variable.
-- you have to start ollama with the "ollama serve" command.
+- First, you must obtain all the supabase keys.
+- Then, you have to move your txt file into the root folder.
+- you have to have running the ollama image.
 - Finally, run the next command:
+
   ``` bash
   python upload.py
   ```
@@ -122,17 +138,6 @@ Posible Use:
 
   NOTE: if it's your first time running the app upload all the .txt file inside the App/cello/library/constraints folder, this txt files are all the ucf information for the ucf recognition system, if you want to upload a custom ucf follow the structure of the txt file showed above.
 
-## Running the gateway:
-First you need to have the ollama models created and pulled, then you can start the gateway with the next commands:
-```bash
-pip install -r requirements.txt && cd llm
-```
-```bash
-python Ollama_gateway
-```
-
-NOTE: This will execute the gateway on 0.0.0.0:8001, to see info about the endpoints go to 0.0.0.0:80001/docs
-
 
 # Configure the mail server:
 NOTE: If your machine has graphical interface this is optional, all the files will be saved inside the Downloads folder.
@@ -148,15 +153,6 @@ To obtain an application-specific password for Gmail:
 4. Go to the two way factor menu and search the application passwords
 5. Then you have to create an application and copy the code, that is your password
 
-then:
-```bash
-go mod init mailserver && go mod tidy
-go run main.go &
-```
-
-NOTE: this will build the go program to be used on the cli app, you need golang installed. To install it see the docs: [golang docs](https://go.dev/dl/). Also this will run the go server on the 8002 port on the background
-
-
 # Running the apps
 There are 2 options:
 - web chat
@@ -169,13 +165,17 @@ for the frontend you have to run:
 
 for the cli:
 - the cello image running
-- the ollama gateway
+- the ollama gateway image running
 - the cli script
 
 ## Running the cli script
+Pre-requisites:
+- **golang** installed on your machine
+To run the cli you have to run:
 ```bash
-pip install -r requirements.txt
-python cli.py
+go mod init
+go mod tidy
+go run cmd/main.go
 ```
 
 All the information about how to run this modules is on the prerequisites section.
