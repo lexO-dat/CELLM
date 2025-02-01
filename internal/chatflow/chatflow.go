@@ -42,7 +42,7 @@ func NewChatFlow() *ChatFlow {
 }
 
 func (cf *ChatFlow) Start() {
-	fmt.Println("Welcome to Genetic Design Chat!")
+	fmt.Println("Welcome to CELLM CLI!")
 	fmt.Println("---------------------------------\n")
 
 	cf.askUCFMode()
@@ -75,7 +75,7 @@ func (cf *ChatFlow) askUCFMode() {
 
 func (cf *ChatFlow) autoSelectUCF() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Please enter your design specs (e.g. organism, outputs, logic gates, etc.): ")
+	fmt.Print("\nPlease enter your design specs (e.g. organism, outputs, logic gates, etc.): ")
 	userSpec, _ := reader.ReadString('\n')
 	userSpec = strings.TrimSpace(userSpec)
 
@@ -140,10 +140,10 @@ func (cf *ChatFlow) handleVerilogInteraction() {
 				userInput = strings.TrimSpace(userInput)
 				if strings.ToLower(userInput) == "done" {
 					if cf.verilogCode != "" {
-						fmt.Println("\nExiting refinement mode. Found a Verilog module.")
+						fmt.Println("\n\nExiting refinement mode. Found a Verilog module.")
 						fmt.Println("\n--- Extracted Verilog Module ---")
 						fmt.Println(cf.verilogCode)
-						fmt.Println("---------------------------------\n")
+						fmt.Println("---------------------------------\n\n")
 					} else {
 						fmt.Println("\nExiting refinement mode. No Verilog module detected.")
 					}
@@ -160,21 +160,21 @@ func (cf *ChatFlow) handleVerilogInteraction() {
 				thinkingPart, responsePart := cf.parseResponse(aiAnswer)
 
 				if thinkingPart != "" {
-					fmt.Println("\n----- Model Thinking -----")
+					fmt.Println("\n\n----- Model Thinking -----")
 					fmt.Println(thinkingPart)
-					fmt.Println("---------------------------\n")
+					fmt.Println("---------------------------\n\n")
 				}
 
-				fmt.Println("\n----- Model Response -----")
+				fmt.Println("\n\n----- Model Response -----")
 				fmt.Println(strings.TrimSpace(responsePart))
-				fmt.Println("---------------------------\n")
+				fmt.Println("---------------------------\n\n")
 
 				moduleCode := cf.extractVerilogModule(responsePart)
 				if moduleCode != "" {
 					cf.verilogCode = moduleCode
-					fmt.Println("\n--- Extracted Verilog Module ---")
+					fmt.Println("\n\n--- Extracted Verilog Module ---")
 					fmt.Println(moduleCode)
-					fmt.Println("---------------------------------\n")
+					fmt.Println("---------------------------------\n\n")
 				} else {
 					fmt.Println("No Verilog module detected in the response.\n")
 					cf.verilogCode = ""

@@ -1,3 +1,4 @@
+// cmd/main.go
 package main
 
 import (
@@ -9,7 +10,6 @@ import (
 )
 
 func main() {
-	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("Warning: Error loading .env file", err)
 	}
