@@ -49,7 +49,7 @@ ollama serve
 ```
 cd llm/ollama/
 ollama pull deepseek-r1:32b
-ollama create custom-r1 -f custom-llama
+ollama create verilog-r1-32b -f custom-llama
 ollama pull phi4
 ollama pull mxbai-embed-large:latest
 ```
