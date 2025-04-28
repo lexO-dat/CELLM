@@ -16,29 +16,6 @@ This project is focused on developing an automated system to analyze and create 
 
 # Prerequisites:
 ## Ollama
-### Run Ollama with the docker images
-I have two docker images for this:
-- The first docker image is for low spects machines, to run the image just use:
-``` bash
-docker run \
--p 8001:8001 \
--e SUPABASE_URL=<URL> \
--e SUPABASE_KEY=<KEY> \
--d \
-lexodat2111/cellm-llm-light
-```
-- The other image is to use the model i used:
-``` bash
-docker run \
--p 8001:8001 \
--e SUPABASE_URL=<URL> \
--e SUPABASE_KEY=<KEY> \
--d \
-lexodat2111/cellm-llm
-```
-
-NOTE: this will install ollama into the container and also all the requirements for the ollama gateway, this will run the Ollama_gateway script on the 8001 port, to see info about the endpoints go to localhost:8001/docs
-
 ### Run Ollama locally
 - To install Ollama, go to the [Ollama web page](https://ollama.com/) and follow the installation instructions in the documentation. (NOTE: if you have a NVIDIA gpu you have to configure the NVIDIA cuda drivers).
 - To execute Ollama run:
