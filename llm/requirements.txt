@@ -11,9 +11,12 @@ uvicorn
 # RAG requirements
 langchain
 langchain-community
+langchain-openai
 supabase
 python-dotenv
 fastapi
 uvicorn
 pydantic
 langchain_ollama
+openai
+httpx
