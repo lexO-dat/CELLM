@@ -14,6 +14,7 @@ class Config:
     # Default provider selection
     UCF_PROVIDER = os.getenv("UCF_PROVIDER", "local")  # "local" or "api"
     VERILOG_PROVIDER = os.getenv("VERILOG_PROVIDER", "local")  # "local" or "api"
+    EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")  # "local" or "api"
     
     # Supabase Configuration
     SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -24,12 +25,13 @@ class Config:
     
     # Local Models
     LOCAL_UCF_MODEL = os.getenv("LOCAL_UCF_MODEL", "phi4")
-    LOCAL_VERILOG_MODEL = os.getenv("LOCAL_VERILOG_MODEL", "verilog-r1-32b")
+    LOCAL_VERILOG_MODEL = os.getenv("LOCAL_VERILOG_MODEL", "verilog-r1-7b") # normal case: 32b
     LOCAL_EMBEDDING_MODEL = os.getenv("LOCAL_EMBEDDING_MODEL", "mxbai-embed-large:latest")
     
     # OPENAI API Configuration
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     OPENAI_UCF_MODEL = os.getenv("OPENAI_UCF_MODEL", "gpt-4o-mini")
+    OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
     
     # DeepSeek API Configuration
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
@@ -83,11 +85,28 @@ class Config:
                 "temperature": 0.3
             }
     
+    # Get Embedding model configuration
+    @classmethod
+    def get_embedding_config(cls) -> Dict[str, Any]:
+        if cls.EMBEDDING_PROVIDER == "api":
+            return {
+                "provider": "openai",
+                "api_key": cls.OPENAI_API_KEY,
+                "model": cls.OPENAI_EMBEDDING_MODEL
+            }
+        else:
+            return {
+                "provider": "ollama",
+                "base_url": cls.OLLAMA_BASE_URL,
+                "model": cls.LOCAL_EMBEDDING_MODEL
+            }
+    
     # Print current configuration status
     @classmethod
     def print_config_status(cls):
         print(f"UCF Provider: {cls.UCF_PROVIDER}")
         print(f"Verilog Provider: {cls.VERILOG_PROVIDER}")
+        print(f"Embedding Provider: {cls.EMBEDDING_PROVIDER}")
         
         validation = cls.validate_api_config()
         print(f"OpenAI Ready: {validation['openai_ready']}")
@@ -96,6 +115,8 @@ class Config:
         
         ucf_config = cls.get_ucf_config()
         verilog_config = cls.get_verilog_config()
+        embedding_config = cls.get_embedding_config()
         
         print(f"UCF Model: {ucf_config['provider']} - {ucf_config['model']}")
         print(f"Verilog Model: {verilog_config['provider']} - {verilog_config['model']}")
+        print(f"Embedding Model: {embedding_config['provider']} - {embedding_config['model']}")

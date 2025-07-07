@@ -5,8 +5,8 @@ from typing import Optional, Dict, Any
 import httpx
 import json
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_openai import ChatOpenAI
-from langchain.schema import BaseLanguageModel
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.language_models.base import BaseLanguageModel
 from config import Config
 
 # Manages different LLM providers (local Ollama and API-based)
@@ -66,14 +66,23 @@ class LLMManager:
         
         return self._verilog_llm
     
-    # Get embeddings model (currently only local Ollama supported)
+    # Get embeddings model (OpenAI API or local Ollama)
     def get_embeddings(self):
         if self._embeddings is None:
-            self._embeddings = OllamaEmbeddings(
-                base_url=self.config.OLLAMA_BASE_URL,
-                model=self.config.LOCAL_EMBEDDING_MODEL
-            )
-            print(f"Using Local Ollama for Embeddings: {self.config.LOCAL_EMBEDDING_MODEL}")
+            embedding_config = self.config.get_embedding_config()
+            
+            if embedding_config["provider"] == "openai":
+                self._embeddings = OpenAIEmbeddings(
+                    api_key=embedding_config["api_key"],
+                    model=embedding_config["model"]
+                )
+                print(f"Using OpenAI for Embeddings: {embedding_config['model']}")
+            else:
+                self._embeddings = OllamaEmbeddings(
+                    base_url=embedding_config["base_url"],
+                    model=embedding_config["model"]
+                )
+                print(f"Using Local Ollama for Embeddings: {embedding_config['model']}")
         
         return self._embeddings
     

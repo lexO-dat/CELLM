@@ -146,10 +146,12 @@ VERILOG_PROMPT = PromptTemplate(
     template=verilog_template
 )
 
-# Get LLMs from manager (handles both local and API models)
+# Get LLMs and embeddings from manager (handles both local and API models)
 ucf_llm = llm_manager.get_ucf_llm()
 verilog_llm = llm_manager.get_verilog_llm()
 embeddings = llm_manager.get_embeddings()
+
+print(f"Initialized embeddings: {type(embeddings).__name__}")
 
 vector_store = SupabaseVectorStore(
     client=supabase,

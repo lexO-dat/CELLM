@@ -1,0 +1,39 @@
+# Bth1C1G1T1 inputs
+Input Sensors:
+- BA_sensor
+- IPTG_sensor
+- aTc_sensor
+
+# Bth1C1G1T1 outputs
+Output Sensors:
+- nanoluc_reporter
+- nanoluc_reporter_2
+
+# Bth1C1G1T1 organism
+Organism:
+- Bacteroides thetaiotaomicron VPI-5482
+
+# Bth1C1G1T1 genome
+Genome:
+- wildtype with dCas9 integrated
+
+# Bth1C1G1T1 media
+Media:
+- TYG (10 g/L Tryptone Peptone, 5 g/L Yeast Extract, 11 mM Glucose, 100 mM KPO4 (pH7.2), 72\u00b5M CaCl2, 0.4 \u00b5g/ml FeSO4 and 1\u00b5g/mL Resazurin, 1.2 \u00b5g/ml hematin, 0.5g/mL of L-cysteine, and 1 \u00b5g/ml of Vitamin K (menadione)
+
+# Bth1C1G1T1 temperature
+Temperature:
+- 37 degrees Celsius
+
+# Bth1C1G1T1 growth
+Growth:
+- Inoculation: Inoculate individual colonies into TYG media without antibiotics and grow 18 hours overnight in the anaerobic chamber.  Dilution and Induction: Next day, dilute 100-fold into pre-reduced TYG with inducers (no antibiotics), grow for 6 hours in the anaerobic chamber.  Measurement: Plate Reader, data processing for RPUL normalization
+
+# Bth1C1G1T1 logic constraints
+Logic constraints:
+- NOR -> 7 instances max.
+- OUTPUT_OR -> unlimited
+
+# Bth1C1G1T1 posible use
+Posible Use:
+- It can be used in genetic circuits as a logical switch where dCas9 blocks a promoter until it receives a signal (e.g., chemical induction), enabling combinational control in biological systems.

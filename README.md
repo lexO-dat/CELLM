@@ -49,13 +49,10 @@ NOTE: this will execute the cello api in 0.0.0.0:8000, to see more further infor
 - nodejs and pnpm installed
 - To install all the dependencies and run the front run the following commands:
 ``` bash
-cd front/chat
+cd frontend
 pnpm install
 pnpm run dev
 ```
-
-NOTE: the frontend is not updated, to use all the system functionalities use the cli.
-
 # Ollama gateway
 
 NOTE: you have to create a supabase account and locate the SUPABASE_URL and SUPABASE_KEY to create the vectorial database and also have to create a .env file:
