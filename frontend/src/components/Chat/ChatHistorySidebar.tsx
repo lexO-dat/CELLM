@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
-  Star, 
-  Archive, 
   Trash2, 
   Edit3, 
   Copy, 
@@ -23,13 +21,11 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
   const [searchQuery, setSearchQuery] = useState('');
   const [editingSession, setEditingSession] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'favorites' | 'archived'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all'>('all');
   
   const { 
     filteredSessions,
     setFilter,
-    archiveSession,
-    favoriteSession,
     deleteSession,
     duplicateSession,
     updateSessionTitle,
@@ -47,8 +43,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
   React.useEffect(() => {
     const filter: ChatHistoryFilter = {
       searchQuery: searchQuery || undefined,
-      isArchived: selectedFilter === 'archived' ? true : selectedFilter === 'all' ? undefined : false,
-      isFavorite: selectedFilter === 'favorites' ? true : undefined,
+      isArchived: false, // Only show non-archived sessions
       limit: 50
     };
     setFilter(filter);
@@ -109,12 +104,8 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
     }
   };
 
-  const getFilterCount = (filter: 'all' | 'favorites' | 'archived') => {
-    switch (filter) {
-      case 'favorites': return stats.favoriteCount;
-      case 'archived': return stats.archivedCount;
-      default: return stats.totalSessions - stats.archivedCount;
-    }
+  const getFilterCount = () => {
+    return stats.totalSessions - stats.archivedCount;
   };
 
   return (
@@ -166,9 +157,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
               {/* Filter Tabs */}
               <div className="flex space-x-1">
                 {[
-                  { key: 'all', icon: MessageSquare },
-                  { key: 'favorites', icon: Star },
-                  { key: 'archived', icon: Archive }
+                  { key: 'all', icon: MessageSquare }
                 ].map(({ key, icon: Icon }) => (
                   <button
                     key={key}
@@ -180,7 +169,7 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
                     }`}
                   >
                     <Icon className="w-3 h-3" />
-                    <span>{getFilterCount(key as any)}</span>
+                    <span>{getFilterCount()}</span>
                   </button>
                 ))}
               </div>
@@ -260,12 +249,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
                           )}
                           
                           <div className="flex items-center gap-1 mt-2">
-                            {session.is_favorite && (
-                              <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                            )}
-                            {session.is_archived && (
-                              <Archive className="w-3 h-3 text-gray-400" />
-                            )}
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               session.ucf_mode === 'auto' 
                                 ? 'bg-green-100 text-green-700' 
@@ -279,17 +262,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
                         {/* Session Actions */}
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                           <div className="flex flex-col gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                favoriteSession(session.id, !session.is_favorite);
-                              }}
-                              className="p-1 text-gray-400 hover:text-yellow-500 transition-colors"
-                              title={session.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
-                            >
-                              <Star className={`w-3 h-3 ${session.is_favorite ? 'fill-current text-yellow-500' : ''}`} />
-                            </button>
-                            
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -310,17 +282,6 @@ const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({ isOpen, onClose
                               title="Duplicate session"
                             >
                               <Copy className="w-3 h-3" />
-                            </button>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                archiveSession(session.id, !session.is_archived);
-                              }}
-                              className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
-                              title={session.is_archived ? 'Unarchive' : 'Archive'}
-                            >
-                              <Archive className="w-3 h-3" />
                             </button>
                             
                             <button

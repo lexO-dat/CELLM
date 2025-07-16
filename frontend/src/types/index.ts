@@ -6,6 +6,7 @@ export interface User {
   email: string;
   avatar?: string;
   createdAt: string;
+  supabaseId?: string; // Add Supabase user ID
 }
 
 export interface Message {

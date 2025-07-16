@@ -7,6 +7,7 @@ import {
 } from '../types/chatHistory';
 import { Message } from '../types';
 import ChatHistoryStorage from '../utils/chatHistoryStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface UseChatHistoryReturn {
   // Current session
@@ -47,6 +48,9 @@ export interface UseChatHistoryReturn {
 }
 
 export const useChatHistory = (): UseChatHistoryReturn => {
+  const { user } = useAuth();
+  const userId = user?.id;
+  
   const [currentSession, setCurrentSession] = useState<ChatHistorySession | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [sessions, setSessions] = useState<ChatHistorySession[]>([]);
@@ -55,48 +59,59 @@ export const useChatHistory = (): UseChatHistoryReturn => {
     limit: 50
   });
 
-  // Load sessions on mount
+  // Load sessions on mount and when user changes
   useEffect(() => {
-    const loadedSessions = ChatHistoryStorage.getAllSessions();
-    setSessions(loadedSessions);
-    
-    // Load current session if exists
-    const currentSessionId = ChatHistoryStorage.getCurrentSessionId();
-    if (currentSessionId) {
-      const session = ChatHistoryStorage.getSessionById(currentSessionId);
-      setCurrentSession(session);
+    if (userId) {
+      const loadedSessions = ChatHistoryStorage.getAllSessions(userId);
+      setSessions(loadedSessions);
+      
+      // Load current session if exists
+      const currentSessionId = ChatHistoryStorage.getCurrentSessionId(userId);
+      if (currentSessionId) {
+        const session = ChatHistoryStorage.getSessionById(currentSessionId, userId);
+        setCurrentSession(session);
+      }
+    } else {
+      // Clear sessions when user logs out
+      setSessions([]);
+      setCurrentSession(null);
     }
-  }, []);
+  }, [userId]);
 
   // Create a new chat session
   const createNewSession = useCallback((title?: string): string => {
+    if (!userId) return '';
+    
     const newSession = ChatHistoryStorage.createSession({
-      title: title || 'New Chat Session'
+      title: title || 'New Chat Session',
+      user_id: userId
     });
     
-    ChatHistoryStorage.saveSession(newSession);
-    ChatHistoryStorage.setCurrentSessionId(newSession.id);
+    ChatHistoryStorage.saveSession(newSession, userId);
+    ChatHistoryStorage.setCurrentSessionId(newSession.id, userId);
     
     setCurrentSession(newSession);
     
     // Refresh the entire sessions list from storage to ensure consistency
-    const refreshedSessions = ChatHistoryStorage.getAllSessions();
+    const refreshedSessions = ChatHistoryStorage.getAllSessions(userId);
     setSessions(refreshedSessions);
     
     return newSession.id;
-  }, []);
+  }, [userId]);
 
   // Load a session and return its messages
   const loadSession = useCallback(async (sessionId: string): Promise<Message[]> => {
+    if (!userId) return [];
+    
     setIsLoadingSession(true);
     
     try {
-      const session = ChatHistoryStorage.getSessionById(sessionId);
+      const session = ChatHistoryStorage.getSessionById(sessionId, userId);
       if (!session) {
         throw new Error('Session not found');
       }
       
-      const historyMessages = ChatHistoryStorage.getMessagesBySessionId(sessionId);
+      const historyMessages = ChatHistoryStorage.getMessagesBySessionId(sessionId, userId);
       
       // Convert history messages to chat messages
       const messages: Message[] = historyMessages.map(hm => ({
@@ -109,7 +124,7 @@ export const useChatHistory = (): UseChatHistoryReturn => {
       }));
       
       setCurrentSession(session);
-      ChatHistoryStorage.setCurrentSessionId(sessionId);
+      ChatHistoryStorage.setCurrentSessionId(sessionId, userId);
       
       return messages;
     } catch (error) {
@@ -118,11 +133,11 @@ export const useChatHistory = (): UseChatHistoryReturn => {
     } finally {
       setIsLoadingSession(false);
     }
-  }, []);
+  }, [userId]);
 
   // Save current session with messages and metadata
   const saveCurrentSession = useCallback((messages: Message[], sessionData?: Partial<ChatHistorySession>) => {
-    if (!currentSession) return;
+    if (!currentSession || !userId) return;
     
     try {
       // Update session metadata
@@ -135,7 +150,7 @@ export const useChatHistory = (): UseChatHistoryReturn => {
       };
       
       // Save session
-      ChatHistoryStorage.saveSession(updatedSession);
+      ChatHistoryStorage.saveSession(updatedSession, userId);
       setCurrentSession(updatedSession);
       
       // Save messages
@@ -150,73 +165,84 @@ export const useChatHistory = (): UseChatHistoryReturn => {
           timestamp: message.timestamp.toISOString()
         });
         
-        ChatHistoryStorage.saveMessage(historyMessage);
+        ChatHistoryStorage.saveMessage(historyMessage, userId);
       });
       
       // Refresh sessions list from storage to ensure it's up to date
-      const refreshedSessions = ChatHistoryStorage.getAllSessions();
+      const refreshedSessions = ChatHistoryStorage.getAllSessions(userId);
       setSessions(refreshedSessions);
     } catch (error) {
       console.error('Error saving session:', error);
     }
-  }, [currentSession]);
+  }, [currentSession, userId]);
 
   // Delete a session
   const deleteSession = useCallback((sessionId: string) => {
-    ChatHistoryStorage.deleteSession(sessionId);
+    if (!userId) return;
+    
+    ChatHistoryStorage.deleteSession(sessionId, userId);
     setSessions(prev => prev.filter(s => s.id !== sessionId));
     
     if (currentSession?.id === sessionId) {
       setCurrentSession(null);
     }
-  }, [currentSession]);
+  }, [currentSession, userId]);
 
   // Duplicate a session
   const duplicateSession = useCallback((sessionId: string): string => {
-    const originalSession = ChatHistoryStorage.getSessionById(sessionId);
+    if (!userId) return '';
+    
+    const originalSession = ChatHistoryStorage.getSessionById(sessionId, userId);
     if (!originalSession) return '';
     
     const newSession = ChatHistoryStorage.createSession({
       ...originalSession,
       title: `${originalSession.title} (Copy)`,
-      is_favorite: false
+      is_favorite: false,
+      user_id: userId
     });
     
     // Copy messages
-    const originalMessages = ChatHistoryStorage.getMessagesBySessionId(sessionId);
+    const originalMessages = ChatHistoryStorage.getMessagesBySessionId(sessionId, userId);
     originalMessages.forEach(msg => {
       const newMessage = ChatHistoryStorage.createMessage({
         ...msg,
         chat_session_id: newSession.id
       });
-      ChatHistoryStorage.saveMessage(newMessage);
+      ChatHistoryStorage.saveMessage(newMessage, userId);
     });
     
-    ChatHistoryStorage.saveSession(newSession);
+    ChatHistoryStorage.saveSession(newSession, userId);
     setSessions(prev => [newSession, ...prev]);
     
     return newSession.id;
-  }, []);
+  }, [userId]);
 
   // Archive/unarchive session
   const archiveSession = useCallback((sessionId: string, archived: boolean = true) => {
-    ChatHistoryStorage.archiveSession(sessionId, archived);
+    if (!userId) return;
+    
+    ChatHistoryStorage.archiveSession(sessionId, archived, userId);
     setSessions(prev => 
       prev.map(s => s.id === sessionId ? { ...s, is_archived: archived, updated_at: new Date().toISOString() } : s)
     );
-  }, []);
+  }, [userId]);
 
   // Favorite/unfavorite session
   const favoriteSession = useCallback((sessionId: string, favorite: boolean = true) => {
-    ChatHistoryStorage.favoriteSession(sessionId, favorite);
+    if (!userId) return;
+    
+    ChatHistoryStorage.favoriteSession(sessionId, favorite, userId);
     setSessions(prev => 
       prev.map(s => s.id === sessionId ? { ...s, is_favorite: favorite, updated_at: new Date().toISOString() } : s)
     );
-  }, []);
+  }, [userId]);
 
   // Update session title
   const updateSessionTitle = useCallback((sessionId: string, title: string) => {
-    ChatHistoryStorage.updateSessionTitle(sessionId, title);
+    if (!userId) return;
+    
+    ChatHistoryStorage.updateSessionTitle(sessionId, title, userId);
     setSessions(prev => 
       prev.map(s => s.id === sessionId ? { ...s, title, updated_at: new Date().toISOString() } : s)
     );
@@ -224,12 +250,13 @@ export const useChatHistory = (): UseChatHistoryReturn => {
     if (currentSession?.id === sessionId) {
       setCurrentSession(prev => prev ? { ...prev, title } : null);
     }
-  }, [currentSession]);
+  }, [currentSession, userId]);
 
   // Search sessions
   const searchSessions = useCallback((filter: ChatHistoryFilter): ChatHistorySession[] => {
-    return ChatHistoryStorage.searchSessions(filter);
-  }, []);
+    if (!userId) return [];
+    return ChatHistoryStorage.searchSessions(filter, userId);
+  }, [userId]);
 
   // Set filter and update filtered sessions
   const setFilter = useCallback((filter: ChatHistoryFilter) => {
@@ -238,13 +265,15 @@ export const useChatHistory = (): UseChatHistoryReturn => {
 
   // Filtered sessions based on current filter
   const filteredSessions = useMemo(() => {
-    return ChatHistoryStorage.searchSessions(currentFilter);
-  }, [currentFilter, sessions]);
+    if (!userId) return [];
+    return ChatHistoryStorage.searchSessions(currentFilter, userId);
+  }, [currentFilter, sessions, userId]);
 
   // Get statistics
   const stats = useMemo(() => {
-    return ChatHistoryStorage.getStats();
-  }, [sessions]);
+    if (!userId) return { totalSessions: 0, totalMessages: 0, favoriteCount: 0, archivedCount: 0 };
+    return ChatHistoryStorage.getStats(userId);
+  }, [sessions, userId]);
 
   // Generate smart session title based on messages
   const generateSessionTitle = useCallback((messages: Message[]): string => {
@@ -277,39 +306,47 @@ export const useChatHistory = (): UseChatHistoryReturn => {
 
   // Export history as JSON
   const exportHistory = useCallback((): string => {
-    const data = ChatHistoryStorage.exportData();
+    if (!userId) return '{}';
+    const data = ChatHistoryStorage.exportData(userId);
     return JSON.stringify(data, null, 2);
-  }, []);
+  }, [userId]);
 
   // Import history from JSON
   const importHistory = useCallback((jsonData: string) => {
+    if (!userId) return;
+    
     try {
       const data = JSON.parse(jsonData);
-      ChatHistoryStorage.importData(data);
-      setSessions(ChatHistoryStorage.getAllSessions());
+      ChatHistoryStorage.importData(data, userId);
+      setSessions(ChatHistoryStorage.getAllSessions(userId));
     } catch (error) {
       console.error('Error importing history:', error);
       throw new Error('Invalid import data format');
     }
-  }, []);
+  }, [userId]);
 
   // Clear all history
   const clearAllHistory = useCallback(() => {
-    ChatHistoryStorage.clearAllData();
+    if (!userId) return;
+    
+    ChatHistoryStorage.clearAllData(userId);
     setSessions([]);
     setCurrentSession(null);
-  }, []);
+  }, [userId]);
 
   // Get storage usage
   const getStorageUsage = useCallback(() => {
-    return ChatHistoryStorage.getStorageUsage();
-  }, []);
+    if (!userId) return { sessions: 0, messages: 0, total: 0 };
+    return ChatHistoryStorage.getStorageUsage(userId);
+  }, [userId]);
 
   // Force refresh sessions from storage
   const refreshSessions = useCallback(() => {
-    const refreshedSessions = ChatHistoryStorage.getAllSessions();
+    if (!userId) return;
+    
+    const refreshedSessions = ChatHistoryStorage.getAllSessions(userId);
     setSessions(refreshedSessions);
-  }, []);
+  }, [userId]);
 
   return {
     currentSession,

@@ -14,12 +14,18 @@ const STORAGE_KEYS = {
   SETTINGS: 'cellm_chat_settings'
 } as const;
 
-// Utility functions for localStorage operations
+// Utility functions for localStorage operations with user-specific storage
 class ChatHistoryStorage {
+  // Get user-specific storage key
+  private static getUserKey(baseKey: string, userId?: string): string {
+    return userId ? `${baseKey}_${userId}` : baseKey;
+  }
+
   // Session management
-  static getAllSessions(): ChatHistorySession[] {
+  static getAllSessions(userId?: string): ChatHistorySession[] {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.SESSIONS);
+      const key = this.getUserKey(STORAGE_KEYS.SESSIONS, userId);
+      const stored = localStorage.getItem(key);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Error loading chat sessions:', error);
@@ -27,9 +33,9 @@ class ChatHistoryStorage {
     }
   }
 
-  static saveSession(session: ChatHistorySession): void {
+  static saveSession(session: ChatHistorySession, userId?: string): void {
     try {
-      const sessions = this.getAllSessions();
+      const sessions = this.getAllSessions(userId);
       const existingIndex = sessions.findIndex(s => s.id === session.id);
       
       if (existingIndex >= 0) {
@@ -38,66 +44,69 @@ class ChatHistoryStorage {
         sessions.push(session);
       }
       
-      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+      const key = this.getUserKey(STORAGE_KEYS.SESSIONS, userId);
+      localStorage.setItem(key, JSON.stringify(sessions));
     } catch (error) {
       console.error('Error saving chat session:', error);
     }
   }
 
-  static getSessionById(id: string): ChatHistorySession | null {
-    const sessions = this.getAllSessions();
+  static getSessionById(id: string, userId?: string): ChatHistorySession | null {
+    const sessions = this.getAllSessions(userId);
     return sessions.find(s => s.id === id) || null;
   }
 
-  static deleteSession(id: string): void {
+  static deleteSession(id: string, userId?: string): void {
     try {
       // Delete session
-      const sessions = this.getAllSessions().filter(s => s.id !== id);
-      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+      const sessions = this.getAllSessions(userId).filter(s => s.id !== id);
+      const key = this.getUserKey(STORAGE_KEYS.SESSIONS, userId);
+      localStorage.setItem(key, JSON.stringify(sessions));
       
       // Delete associated messages
-      this.deleteMessagesBySessionId(id);
+      this.deleteMessagesBySessionId(id, userId);
       
       // Clear current session if it was deleted
-      if (this.getCurrentSessionId() === id) {
-        this.setCurrentSessionId(null);
+      if (this.getCurrentSessionId(userId) === id) {
+        this.setCurrentSessionId(null, userId);
       }
     } catch (error) {
       console.error('Error deleting chat session:', error);
     }
   }
 
-  static archiveSession(id: string, archived: boolean = true): void {
-    const session = this.getSessionById(id);
+  static archiveSession(id: string, archived: boolean = true, userId?: string): void {
+    const session = this.getSessionById(id, userId);
     if (session) {
       session.is_archived = archived;
       session.updated_at = new Date().toISOString();
-      this.saveSession(session);
+      this.saveSession(session, userId);
     }
   }
 
-  static favoriteSession(id: string, favorite: boolean = true): void {
-    const session = this.getSessionById(id);
+  static favoriteSession(id: string, favorite: boolean = true, userId?: string): void {
+    const session = this.getSessionById(id, userId);
     if (session) {
       session.is_favorite = favorite;
       session.updated_at = new Date().toISOString();
-      this.saveSession(session);
+      this.saveSession(session, userId);
     }
   }
 
-  static updateSessionTitle(id: string, title: string): void {
-    const session = this.getSessionById(id);
+  static updateSessionTitle(id: string, title: string, userId?: string): void {
+    const session = this.getSessionById(id, userId);
     if (session) {
       session.title = title;
       session.updated_at = new Date().toISOString();
-      this.saveSession(session);
+      this.saveSession(session, userId);
     }
   }
 
   // Message management
-  static getAllMessages(): ChatHistoryMessage[] {
+  static getAllMessages(userId?: string): ChatHistoryMessage[] {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+      const key = this.getUserKey(STORAGE_KEYS.MESSAGES, userId);
+      const stored = localStorage.getItem(key);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Error loading chat messages:', error);
@@ -105,9 +114,9 @@ class ChatHistoryStorage {
     }
   }
 
-  static saveMessage(message: ChatHistoryMessage): void {
+  static saveMessage(message: ChatHistoryMessage, userId?: string): void {
     try {
-      const messages = this.getAllMessages();
+      const messages = this.getAllMessages(userId);
       const existingIndex = messages.findIndex(m => m.id === message.id);
       
       if (existingIndex >= 0) {
@@ -116,52 +125,57 @@ class ChatHistoryStorage {
         messages.push(message);
       }
       
-      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+      const key = this.getUserKey(STORAGE_KEYS.MESSAGES, userId);
+      localStorage.setItem(key, JSON.stringify(messages));
     } catch (error) {
       console.error('Error saving chat message:', error);
     }
   }
 
-  static getMessagesBySessionId(sessionId: string): ChatHistoryMessage[] {
-    return this.getAllMessages()
+  static getMessagesBySessionId(sessionId: string, userId?: string): ChatHistoryMessage[] {
+    return this.getAllMessages(userId)
       .filter(m => m.chat_session_id === sessionId)
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
-  static deleteMessagesBySessionId(sessionId: string): void {
+  static deleteMessagesBySessionId(sessionId: string, userId?: string): void {
     try {
-      const messages = this.getAllMessages().filter(m => m.chat_session_id !== sessionId);
-      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+      const messages = this.getAllMessages(userId).filter(m => m.chat_session_id !== sessionId);
+      const key = this.getUserKey(STORAGE_KEYS.MESSAGES, userId);
+      localStorage.setItem(key, JSON.stringify(messages));
     } catch (error) {
       console.error('Error deleting messages for session:', error);
     }
   }
 
-  static deleteMessage(messageId: string): void {
+  static deleteMessage(messageId: string, userId?: string): void {
     try {
-      const messages = this.getAllMessages().filter(m => m.id !== messageId);
-      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
+      const messages = this.getAllMessages(userId).filter(m => m.id !== messageId);
+      const key = this.getUserKey(STORAGE_KEYS.MESSAGES, userId);
+      localStorage.setItem(key, JSON.stringify(messages));
     } catch (error) {
       console.error('Error deleting message:', error);
     }
   }
 
   // Current session management
-  static getCurrentSessionId(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION);
+  static getCurrentSessionId(userId?: string): string | null {
+    const key = this.getUserKey(STORAGE_KEYS.CURRENT_SESSION, userId);
+    return localStorage.getItem(key);
   }
 
-  static setCurrentSessionId(sessionId: string | null): void {
+  static setCurrentSessionId(sessionId: string | null, userId?: string): void {
+    const key = this.getUserKey(STORAGE_KEYS.CURRENT_SESSION, userId);
     if (sessionId) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, sessionId);
+      localStorage.setItem(key, sessionId);
     } else {
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
+      localStorage.removeItem(key);
     }
   }
 
   // Search and filtering
-  static searchSessions(filter: ChatHistoryFilter): ChatHistorySession[] {
-    let sessions = this.getAllSessions();
+  static searchSessions(filter: ChatHistoryFilter, userId?: string): ChatHistorySession[] {
+    let sessions = this.getAllSessions(userId);
 
     // Apply filters
     if (filter.searchQuery) {
@@ -207,9 +221,9 @@ class ChatHistoryStorage {
   }
 
   // Statistics
-  static getStats(): ChatHistoryStats {
-    const sessions = this.getAllSessions();
-    const messages = this.getAllMessages();
+  static getStats(userId?: string): ChatHistoryStats {
+    const sessions = this.getAllSessions(userId);
+    const messages = this.getAllMessages(userId);
 
     const ucfCounts: { [key: string]: number } = {};
     sessions.forEach(session => {
@@ -238,20 +252,23 @@ class ChatHistoryStorage {
   }
 
   // Data export/import for migration
-  static exportData(): ChatHistoryExport {
+  static exportData(userId?: string): ChatHistoryExport {
     return {
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
-      sessions: this.getAllSessions(),
-      messages: this.getAllMessages(),
-      stats: this.getStats()
+      sessions: this.getAllSessions(userId),
+      messages: this.getAllMessages(userId),
+      stats: this.getStats(userId)
     };
   }
 
-  static importData(data: ChatHistoryExport): void {
+  static importData(data: ChatHistoryExport, userId?: string): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(data.sessions));
-      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(data.messages));
+      const sessionsKey = this.getUserKey(STORAGE_KEYS.SESSIONS, userId);
+      const messagesKey = this.getUserKey(STORAGE_KEYS.MESSAGES, userId);
+      
+      localStorage.setItem(sessionsKey, JSON.stringify(data.sessions));
+      localStorage.setItem(messagesKey, JSON.stringify(data.messages));
     } catch (error) {
       console.error('Error importing chat history data:', error);
       throw new Error('Failed to import chat history');
@@ -259,15 +276,27 @@ class ChatHistoryStorage {
   }
 
   // Cleanup and maintenance
-  static clearAllData(): void {
-    Object.values(STORAGE_KEYS).forEach(key => {
-      localStorage.removeItem(key);
-    });
+  static clearAllData(userId?: string): void {
+    if (userId) {
+      // Clear user-specific data
+      Object.values(STORAGE_KEYS).forEach(key => {
+        const userKey = this.getUserKey(key, userId);
+        localStorage.removeItem(userKey);
+      });
+    } else {
+      // Clear all data
+      Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+      });
+    }
   }
 
-  static getStorageUsage(): { sessions: number; messages: number; total: number } {
-    const sessionsSize = localStorage.getItem(STORAGE_KEYS.SESSIONS)?.length || 0;
-    const messagesSize = localStorage.getItem(STORAGE_KEYS.MESSAGES)?.length || 0;
+  static getStorageUsage(userId?: string): { sessions: number; messages: number; total: number } {
+    const sessionsKey = this.getUserKey(STORAGE_KEYS.SESSIONS, userId);
+    const messagesKey = this.getUserKey(STORAGE_KEYS.MESSAGES, userId);
+    
+    const sessionsSize = localStorage.getItem(sessionsKey)?.length || 0;
+    const messagesSize = localStorage.getItem(messagesKey)?.length || 0;
     
     return {
       sessions: sessionsSize,

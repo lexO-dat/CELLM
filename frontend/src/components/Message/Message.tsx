@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Bot, ChevronDown, ChevronUp, Clock, Code, Cpu } from "lucide-react";
+import { User, Bot, ChevronDown, ChevronUp, Clock, Code, Cpu, MessageSquare } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Message as MessageType } from "../../types";
 
 interface MessageProps {
@@ -51,6 +54,28 @@ const Message: React.FC<MessageProps> = ({ message }) => {
         }
     };
 
+    // Custom components for ReactMarkdown
+    const components = {
+        code({ node, inline, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || '');
+            return !inline && match ? (
+                <SyntaxHighlighter
+                    style={vscDarkPlus}
+                    language={match[1]}
+                    PreTag="div"
+                    className="rounded-lg"
+                    {...props}
+                >
+                    {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+            ) : (
+                <code className={`${className} bg-gray-200 px-1 py-0.5 rounded text-sm`} {...props}>
+                    {children}
+                </code>
+            );
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -74,7 +99,7 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                     </span>
                 </div>
 
-                {/* Thinking Section */}
+                {/* Model Thinking Section */}
                 {thinking && !isUser && (
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -97,7 +122,7 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.2 }}
-                                    className="mt-2 p-2 sm:p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300"
+                                    className="mt-2 p-2 sm:p-3 bg-gray-50 rounded-lg border-l-4 border-purple-300"
                                 >
                                     <div className="text-xs sm:text-sm text-gray-700 font-mono whitespace-pre-wrap">
                                         {thinking}
@@ -105,6 +130,28 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+                    </motion.div>
+                )}
+
+                {/* Model Response Section */}
+                {!isUser && type === 'verilog' && text && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mb-3"
+                    >
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 mb-2">
+                            <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>Model Response</span>
+                        </div>
+                        
+                        <div className="p-2 sm:p-3 bg-blue-50 rounded-lg border-l-4 border-blue-300">
+                            <div className="text-xs sm:text-sm text-gray-700 prose prose-sm max-w-none">
+                                <ReactMarkdown components={components}>
+                                    {text}
+                                </ReactMarkdown>
+                            </div>
+                        </div>
                     </motion.div>
                 )}
 
@@ -116,15 +163,15 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                             : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md'
                     }`}
                 >
-                    {type === 'verilog' ? (
+                    {type === 'verilog' && !isUser ? (
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-xs sm:text-sm opacity-75">
                                 <Code className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span>Verilog Code</span>
+                                <span>Verilog Generation Complete</span>
                             </div>
-                            <pre className="bg-gray-800 text-green-400 p-2 sm:p-3 rounded-lg overflow-x-auto text-xs sm:text-sm">
-                                <code>{text}</code>
-                            </pre>
+                            <div className="text-xs sm:text-sm text-gray-600">
+                                {thinking ? 'Model thinking and detailed response available above.' : 'Response generated successfully.'}
+                            </div>
                         </div>
                     ) : (
                         <div className="whitespace-pre-wrap text-sm sm:text-base">

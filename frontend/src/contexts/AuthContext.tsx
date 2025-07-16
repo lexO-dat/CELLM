@@ -1,32 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import Cookies from 'js-cookie';
+import { supabase } from '../lib/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, AuthState } from '../types';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; needsConfirmation: boolean; message?: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// User database for authentication
-const USERS: User[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com', 
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=100&h=100&fit=crop&crop=face',
-    createdAt: new Date().toISOString()
-  }
-];
+// Helper function to convert Supabase user to our User type
+const convertSupabaseUser = (supabaseUser: SupabaseUser): User => {
+  return {
+    id: supabaseUser.id,
+    name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+    email: supabaseUser.email || '',
+    avatar: supabaseUser.user_metadata?.avatar_url || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face`,
+    createdAt: supabaseUser.created_at || new Date().toISOString(),
+    supabaseId: supabaseUser.id
+  };
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>({
@@ -37,87 +33,224 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     // Check for existing session on mount
-    const savedUser = Cookies.get('cellm_user');
-    if (savedUser) {
+    const checkSession = async () => {
       try {
-        const user = JSON.parse(savedUser);
-        setAuthState({
-          isAuthenticated: true,
-          user,
-          isLoading: false
-        });
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          setAuthState({
+            isAuthenticated: true,
+            user: convertSupabaseUser(session.user),
+            isLoading: false
+          });
+        } else {
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+        }
       } catch (error) {
-        console.error('Failed to parse saved user:', error);
-        Cookies.remove('cellm_user');
+        console.error('Error checking session:', error);
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
-    } else {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-    }
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setAuthState({
+            isAuthenticated: true,
+            user: convertSupabaseUser(session.user),
+            isLoading: false
+          });
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            isAuthenticated: false,
+            user: undefined,
+            isLoading: false
+          });
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
-    // Authenticate user
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const user = USERS.find(u => u.email === email);
-    if (user && password === 'password') { 
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('Login error:', error.message);
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+        
+        // Return user-friendly error messages
+        let userMessage = '';
+        if (error.message.includes('Invalid login credentials')) {
+          userMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          userMessage = 'Please check your email and click the confirmation link to activate your account.';
+        } else if (error.message.includes('Too many requests')) {
+          userMessage = 'Too many login attempts. Please wait a moment and try again.';
+        } else if (error.status === 403) {
+          userMessage = 'Access denied. Please check your internet connection and try again.';
+        } else if (error.status === 400) {
+          userMessage = 'Invalid request. Please check your email and password format.';
+        } else {
+          userMessage = `Login failed: ${error.message}`;
+        }
+        
+        return { success: false, message: userMessage };
+      }
+
+      if (data.user) {
+        setAuthState({
+          isAuthenticated: true,
+          user: convertSupabaseUser(data.user),
+          isLoading: false
+        });
+        return { success: true };
+      }
+
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      return { success: false, message: 'Login failed. Please try again.' };
+    } catch (error) {
+      console.error('Login error:', error);
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      return { success: false, message: 'An unexpected error occurred. Please check your internet connection and try again.' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
       setAuthState({
-        isAuthenticated: true,
-        user,
+        isAuthenticated: false,
+        user: undefined,
         isLoading: false
       });
-      
-      // Save to cookies (expires in 7 days)
-      Cookies.set('cellm_user', JSON.stringify(user), { expires: 7 });
-      return true;
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-    
-    setAuthState(prev => ({ ...prev, isLoading: false }));
-    return false;
   };
 
-  const logout = () => {
-    setAuthState({
-      isAuthenticated: false,
-      user: undefined,
-      isLoading: false
-    });
-    Cookies.remove('cellm_user');
-  };
-
-  const register = async (name: string, email: string, _password: string): Promise<boolean> => {
+  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; needsConfirmation: boolean; message?: string }> => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
-    // User registration
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const existingUser = USERS.find(u => u.email === email);
-    if (existingUser) {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Registration error:', error.message);
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+        
+        // Return user-friendly error messages
+        let userMessage = '';
+        if (error.message.includes('Password should be at least 6 characters')) {
+          userMessage = 'Password must be at least 6 characters long.';
+        } else if (error.message.includes('User already registered')) {
+          userMessage = 'An account with this email already exists. Please sign in instead.';
+        } else if (error.message.includes('Invalid email')) {
+          userMessage = 'Please enter a valid email address.';
+        } else if (error.status === 422) {
+          userMessage = 'Registration failed. Please check your information and try again.';
+        } else if (error.status === 403) {
+          userMessage = 'Registration is currently unavailable. Please try again later.';
+        } else {
+          userMessage = `Registration failed: ${error.message}`;
+        }
+        
+        return { 
+          success: false, 
+          needsConfirmation: false, 
+          message: userMessage 
+        };
+      }
+
+      if (data.user) {
+        // Check if email confirmation is required
+        if (data.user.email_confirmed_at) {
+          // User is immediately confirmed and signed in
+          setAuthState({
+            isAuthenticated: true,
+            user: convertSupabaseUser(data.user),
+            isLoading: false
+          });
+          return { 
+            success: true, 
+            needsConfirmation: false, 
+            message: 'Account created and signed in successfully!' 
+          };
+        } else {
+          // User needs to confirm their email
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+          return { 
+            success: true, 
+            needsConfirmation: true, 
+            message: 'Please check your email and click the confirmation link to activate your account.' 
+          };
+        }
+      }
+
       setAuthState(prev => ({ ...prev, isLoading: false }));
-      return false; // User already exists
+      return { 
+        success: false, 
+        needsConfirmation: false, 
+        message: 'Registration failed. Please try again.' 
+      };
+    } catch (error) {
+      console.error('Registration error:', error);
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      return { 
+        success: false, 
+        needsConfirmation: false, 
+        message: 'An unexpected error occurred. Please try again.' 
+      };
     }
-    
-    const newUser: User = {
-      id: (USERS.length + 1).toString(),
-      name,
-      email,
-      avatar: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face`,
-      createdAt: new Date().toISOString()
-    };
-    
-    USERS.push(newUser);
-    
-    setAuthState({
-      isAuthenticated: true,
-      user: newUser,
-      isLoading: false
-    });
-    
-    Cookies.set('cellm_user', JSON.stringify(newUser), { expires: 7 });
-    return true;
+  };
+
+  const resetPassword = async (email: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        console.error('Password reset error:', error.message);
+        
+        // Return user-friendly error messages
+        let userMessage = '';
+        if (error.message.includes('User not found')) {
+          userMessage = 'No account found with this email address.';
+        } else if (error.message.includes('Invalid email')) {
+          userMessage = 'Please enter a valid email address.';
+        } else if (error.message.includes('Too many requests')) {
+          userMessage = 'Too many requests. Please wait a moment and try again.';
+        } else {
+          userMessage = `Password reset failed: ${error.message}`;
+        }
+        
+        return { success: false, message: userMessage };
+      }
+
+      return { success: true, message: 'Password reset email sent! Check your inbox.' };
+    } catch (error) {
+      console.error('Password reset error:', error);
+      return { success: false, message: 'An unexpected error occurred. Please try again.' };
+    }
   };
 
   return (
@@ -125,7 +258,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ...authState,
       login,
       logout,
-      register
+      register,
+      resetPassword
     }}>
       {children}
     </AuthContext.Provider>

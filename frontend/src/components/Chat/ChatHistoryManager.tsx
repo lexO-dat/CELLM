@@ -4,9 +4,7 @@ import {
   Download, 
   Upload, 
   Trash2, 
-  Settings,
-  Database,
-  FileText
+  Database
 } from 'lucide-react';
 import { useChatHistory } from '../../hooks/useChatHistory';
 
@@ -124,14 +122,6 @@ const ChatHistoryManager: React.FC<ChatHistoryManagerProps> = ({ isOpen, onClose
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Total Messages:</span>
                       <span className="font-medium">{stats.totalMessages}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Favorites:</span>
-                      <span className="font-medium">{stats.favoriteCount}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Archived:</span>
-                      <span className="font-medium">{stats.archivedCount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Storage Used:</span>

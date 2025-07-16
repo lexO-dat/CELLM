@@ -19,7 +19,8 @@ const ChatInterface: React.FC = () => {
     outputFiles, 
     folderName,
     error,
-    addMessage, 
+    addMessage,
+    updateMessage, 
     setUcfMode, 
     setSelectedUcf, 
     setOutputFiles, 
@@ -30,7 +31,8 @@ const ChatInterface: React.FC = () => {
     createNewSession,
     saveSession,
     autoSaveEnabled,
-    setAutoSaveEnabled
+    setAutoSaveEnabled,
+    generateMessageId
   } = useChat();
 
   const [inputMessage, setInputMessage] = useState('');
@@ -103,87 +105,116 @@ const ChatInterface: React.FC = () => {
     setError(undefined);
 
     try {
-      // Step 1: Generate Verilog code
+      // Step 1: Generate Verilog code with streaming
       addMessage({
         text: 'Generating Verilog code for your genetic circuit...',
         isUser: false,
         type: 'system'
       });
 
+      // Step 1: Generate Verilog code
       const verilogResult = await apiService.generateVerilog(inputMessage);
       
-      addMessage({
-        text: verilogResult.response,
-        isUser: false,
-        thinking: verilogResult.thinking,
-        type: 'verilog'
-      });
-
-      // Extract Verilog module
-      const verilogCode = apiService.extractVerilogModule(verilogResult.response);
-      if (!verilogCode) {
-        console.log(verilogResult.response);
-        throw new Error('No valid Verilog module found in the response');
-      }
-
-      // Step 2: UCF Selection
-      let selectedUcfForProcessing = ucfMode.selectedUcf;
-      
-      if (ucfMode.mode === 'auto') {
-        addMessage({
-          text: 'Automatically selecting optimal UCF based on your design...',
+      // Check if there's thinking content and display it
+      if (verilogResult.thinking) {
+        const verilogMessage: Message = {
+          id: generateMessageId(),
+          text: verilogResult.response,
           isUser: false,
-          type: 'system'
-        });
-
-        const ucfName = await apiService.selectUcf(inputMessage);
-        const autoSelectedUcf = ucfOptions.find(ucf => 
-          ucf.name.toLowerCase() === ucfName.toLowerCase()
-        );
-        
-        if (autoSelectedUcf) {
-          selectedUcfForProcessing = autoSelectedUcf;
-          setSelectedUcf(autoSelectedUcf);
-        }
-
-        addMessage({
-          text: `Selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
-          isUser: false,
-          type: 'ucf_selection'
-        });
+          type: 'verilog',
+          timestamp: new Date(),
+          thinking: verilogResult.thinking
+        };
+        addMessage(verilogMessage);
       } else {
         addMessage({
-          text: `Using manually selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
+          text: verilogResult.response,
           isUser: false,
-          type: 'ucf_selection'
+          type: 'verilog'
         });
       }
 
-      // Step 3: Cello Processing
-      addMessage({
-        text: 'Processing with Cello to generate genetic circuit design...',
-        isUser: false,
-        type: 'system'
-      });
+      // Continue with UCF selection and Cello processing
+      continueWithProcessing(verilogResult.response);
 
-      const celloResult = await apiService.processCello(
-        verilogCode, 
-        selectedUcfForProcessing?.id || 1
-      );
-      
-      setOutputFiles(celloResult.output_files || []);
-      setFolderName(celloResult.folder_name || '');
+      async function continueWithProcessing(verilogResponse: string) {
+        try {
+          // Extract Verilog module
+          const verilogCode = apiService.extractVerilogModule(verilogResponse);
+          if (!verilogCode) {
+            console.log(verilogResponse);
+            throw new Error('No valid Verilog module found in the response');
+          }
 
-      addMessage({
-        text: `✅ Cello processing completed successfully!\n\nGenerated ${celloResult.output_files?.length || 0} output files:\n${(celloResult.output_files || []).map(file => `• ${file}`).join('\n')}\n\nFolder: ${celloResult.folder_name}`,
-        isUser: false,
-        type: 'system'
-      });
+          // Step 2: UCF Selection
+          let selectedUcfForProcessing = ucfMode.selectedUcf;
+          
+          if (ucfMode.mode === 'auto') {
+            addMessage({
+              text: 'Automatically selecting optimal UCF based on your design...',
+              isUser: false,
+              type: 'system'
+            });
 
-      // Save session after completing the full workflow
-      setTimeout(() => {
-        saveSession();
-      }, 500); // Small delay to ensure all messages are processed
+            const ucfName = await apiService.selectUcf(inputMessage);
+            const autoSelectedUcf = ucfOptions.find(ucf => 
+              ucf.name.toLowerCase() === ucfName.toLowerCase()
+            );
+            
+            if (autoSelectedUcf) {
+              selectedUcfForProcessing = autoSelectedUcf;
+              setSelectedUcf(autoSelectedUcf);
+            }
+
+            addMessage({
+              text: `Selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
+              isUser: false,
+              type: 'ucf_selection'
+            });
+          } else {
+            addMessage({
+              text: `Using manually selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
+              isUser: false,
+              type: 'ucf_selection'
+            });
+          }
+
+          // Step 3: Cello Processing
+          addMessage({
+            text: 'Processing with Cello to generate genetic circuit design...',
+            isUser: false,
+            type: 'system'
+          });
+
+          const celloResult = await apiService.processCello(
+            verilogCode, 
+            selectedUcfForProcessing?.id || 1
+          );
+          
+          setOutputFiles(celloResult.output_files || []);
+          setFolderName(celloResult.folder_name || '');
+
+          addMessage({
+            text: `✅ Cello processing completed successfully!\n\nGenerated ${celloResult.output_files?.length || 0} output files:\n${(celloResult.output_files || []).map(file => `• ${file}`).join('\n')}\n\nFolder: ${celloResult.folder_name}`,
+            isUser: false,
+            type: 'system'
+          });
+
+          // Save session after completing the full workflow
+          setTimeout(() => {
+            saveSession();
+          }, 500); // Small delay to ensure all messages are processed
+
+        } catch (error: any) {
+          console.error('Error in processing workflow:', error);
+          setError(error.message);
+          addMessage({
+            text: `❌ Error: ${error.message}`,
+            isUser: false,
+            type: 'error'
+          });
+        }
+      }
 
     } catch (error: any) {
       console.error('Error in chat flow:', error);
@@ -197,13 +228,18 @@ const ChatInterface: React.FC = () => {
   }, [
     inputMessage, 
     isLoading, 
+    currentSessionId,
     ucfMode, 
     ucfOptions, 
-    addMessage, 
+    addMessage,
+    updateMessage, 
     setSelectedUcf, 
     setOutputFiles, 
     setFolderName, 
-    setError
+    setError,
+    createNewSession,
+    saveSession,
+    generateMessageId
   ]);
 
   const downloadFile = useCallback(async (fileName: string) => {

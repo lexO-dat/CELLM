@@ -299,4 +299,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "interactive":
         verilog_interactive()
     else:
-        uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8001, reload=True)
+        uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8088, reload=True)

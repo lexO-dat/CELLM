@@ -1,7 +1,7 @@
 import { ApiResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:8001'; // LLM Gateway
-const CELLO_API_URL = 'http://localhost:8000'; // Cello API
+const API_BASE_URL = 'http://134.199.140.227:8088'; // LLM Gateway
+const CELLO_API_URL = 'http://134.199.140.227:8000'; // Cello API
 
 class ApiService {
   // UCF Selection

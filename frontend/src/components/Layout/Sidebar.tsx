@@ -11,11 +11,8 @@ import {
   Trash2,
   Edit3,
   Search,
-  Star,
-  Archive,
   Copy,
   Download,
-  Upload,
   Database
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -37,21 +34,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [editingSession, setEditingSession] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'favorites' | 'archived'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all'>('all');
   const [showHistoryManager, setShowHistoryManager] = useState(false);
 
   // Chat history hooks
   const { 
     filteredSessions,
     setFilter,
-    archiveSession,
-    favoriteSession,
     deleteSession,
     duplicateSession,
     updateSessionTitle,
     stats,
     exportHistory,
-    importHistory,
     clearAllHistory,
     refreshSessions
   } = useChatHistory();
@@ -67,8 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   React.useEffect(() => {
     const filter: ChatHistoryFilter = {
       searchQuery: searchQuery || undefined,
-      isArchived: selectedFilter === 'archived' ? true : selectedFilter === 'all' ? undefined : false,
-      isFavorite: selectedFilter === 'favorites' ? true : undefined,
+      isArchived: false, // Only show non-archived sessions
       limit: 50
     };
     setFilter(filter);
@@ -140,12 +133,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const getFilterCount = (filter: 'all' | 'favorites' | 'archived') => {
-    switch (filter) {
-      case 'favorites': return stats.favoriteCount;
-      case 'archived': return stats.archivedCount;
-      default: return stats.totalSessions - stats.archivedCount;
-    }
+  const getFilterCount = () => {
+    return stats.totalSessions - stats.archivedCount;
   };
 
   const handleExport = () => {
@@ -248,9 +237,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Filter Tabs */}
             <div className="flex space-x-1 mb-3">
               {[
-                { key: 'all', icon: MessageSquare, label: 'All' },
-                { key: 'favorites', icon: Star, label: 'Favorites' },
-                { key: 'archived', icon: Archive, label: 'Archived' }
+                { key: 'all', icon: MessageSquare, label: 'All' }
               ].map(({ key, icon: Icon, label }) => (
                 <button
                   key={key}
@@ -260,10 +247,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'
                   }`}
-                  title={`${label} (${getFilterCount(key as any)})`}
+                  title={`${label} (${getFilterCount()})`}
                 >
                   <Icon className="w-3 h-3" />
-                  <span className="hidden sm:inline">{getFilterCount(key as any)}</span>
+                  <span className="hidden sm:inline">{getFilterCount()}</span>
                 </button>
               ))}
             </div>
@@ -326,15 +313,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-1 pt-1">
-                          {session.is_favorite && (
-                            <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                          )}
-                          {session.is_archived && (
-                            <Archive className="w-3 h-3 text-gray-400" />
-                          )}
-                          {!session.is_favorite && !session.is_archived && (
-                            <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
-                          )}
+                          <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -398,17 +377,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                favoriteSession(session.id, !session.is_favorite);
-                              }}
-                              className="p-1 hover:bg-gray-700 rounded"
-                              title={session.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
-                            >
-                              <Star className={`w-3 h-3 ${session.is_favorite ? 'fill-current text-yellow-400' : 'text-gray-400'}`} />
-                            </button>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
                                 handleEditStart(session.id, session.title);
                               }}
                               className="p-1 hover:bg-gray-700 rounded"
@@ -426,17 +394,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                               title="Duplicate session"
                             >
                               <Copy className="w-3 h-3 text-gray-400" />
-                            </button>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                archiveSession(session.id, !session.is_archived);
-                              }}
-                              className="p-1 hover:bg-gray-700 rounded"
-                              title={session.is_archived ? 'Unarchive' : 'Archive'}
-                            >
-                              <Archive className="w-3 h-3 text-gray-400" />
                             </button>
                             
                             <button
@@ -512,14 +469,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <span className="text-gray-600">Total Messages:</span>
                                 <span className="font-medium">{stats.totalMessages}</span>
                               </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Favorites:</span>
-                                <span className="font-medium">{stats.favoriteCount}</span>
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Archived:</span>
-                                <span className="font-medium">{stats.archivedCount}</span>
-                              </div>
                               {stats.mostUsedUcf && (
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-600">Most Used UCF:</span>
@@ -587,13 +536,13 @@ const Sidebar: React.FC<SidebarProps> = ({
               transition={{ duration: 0.2 }}
               className="flex items-center gap-2 md:gap-3"
             >
-              <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+              {/* <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.name} className="w-6 h-6 md:w-8 md:h-8 rounded-full" />
                 ) : (
                   <User className="w-3 h-3 md:w-4 md:h-4" />
                 )}
-              </div>
+              </div> */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs md:text-sm font-medium truncate">{user?.name}</p>
                 <p className="text-xs text-gray-400 truncate hidden md:block">{user?.email}</p>

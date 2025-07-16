@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Message, ChatState, UCFOption } from '../types';
 import { useChatHistory } from '../hooks/useChatHistory';
+import ChatHistoryStorage from '../utils/chatHistoryStorage';
 
 const UCF_OPTIONS: UCFOption[] = [
-  { id: 0, name: 'Bth1C1G1T1', description: 'Bacillus thuringiensis - Single input/output', organism: 'B. thuringiensis', gates: 1, complexity: 'simple' },
-  { id: 1, name: 'Eco1C1G1T1', description: 'E. coli - Single input/output', organism: 'E. coli', gates: 1, complexity: 'simple' },
-  { id: 2, name: 'Eco1C2G2T2', description: 'E. coli - Dual input/output', organism: 'E. coli', gates: 2, complexity: 'medium' },
-  { id: 3, name: 'Eco2C1G3T1', description: 'E. coli - Triple gate system', organism: 'E. coli', gates: 3, complexity: 'medium' },
-  { id: 4, name: 'Eco2C1G5T1', description: 'E. coli - Five gate system', organism: 'E. coli', gates: 5, complexity: 'complex' },
-  { id: 5, name: 'SC1C1G1T1', description: 'S. cerevisiae - Single input/output', organism: 'S. cerevisiae', gates: 1, complexity: 'simple' },
+  { id: 0, name: 'Bth1C1G1T1', description: 'Bacillus thuringiensis', organism: 'B. thuringiensis', gates: 1, complexity: 'simple' },
+  { id: 1, name: 'Eco1C1G1T1', description: 'E. coli', organism: 'E. coli', gates: 1, complexity: 'simple' },
+  { id: 2, name: 'Eco1C2G2T2', description: 'E. coli', organism: 'E. coli', gates: 2, complexity: 'medium' },
+  { id: 3, name: 'Eco2C1G3T1', description: 'E. coli', organism: 'E. coli', gates: 3, complexity: 'medium' },
+  { id: 4, name: 'Eco2C1G5T1', description: 'E. coli', organism: 'E. coli', gates: 5, complexity: 'complex' },
+  { id: 5, name: 'SC1C1G1T1', description: 'S. cerevisiae', organism: 'S. cerevisiae', gates: 1, complexity: 'simple' },
 ];
 
 interface ChatContextType extends ChatState {
@@ -209,21 +210,40 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return currentSession.id;
     }
     
-    // Clear current messages
-    clearMessages();
+    // Clear current messages and session-specific data
+    setChatState(prev => ({
+      ...prev,
+      messages: [],
+      outputFiles: [],
+      folderName: '',
+      error: undefined
+    }));
     
     // Create new session
     const sessionId = createHistorySession(title);
     
     return sessionId;
-  }, [clearMessages, createHistorySession, currentSession, chatState.messages.length]);
+  }, [createHistorySession, currentSession, chatState.messages.length]);
 
   const loadSession = useCallback(async (sessionId: string): Promise<void> => {
     try {
       const messages = await loadHistorySession(sessionId);
+      
+      // Load session-specific data including output files and folder name
+      const sessionData = ChatHistoryStorage.getSessionById(sessionId);
+      
       setChatState(prev => ({
         ...prev,
-        messages
+        messages,
+        outputFiles: sessionData?.output_files || [],
+        folderName: sessionData?.folder_name || '',
+        ucfMode: {
+          ...prev.ucfMode,
+          mode: sessionData?.ucf_mode || 'auto',
+          selectedUcf: sessionData?.selected_ucf_id !== undefined 
+            ? UCF_OPTIONS.find(ucf => ucf.id === sessionData.selected_ucf_id) || prev.ucfMode.selectedUcf
+            : prev.ucfMode.selectedUcf
+        }
       }));
     } catch (error) {
       console.error('Error loading session:', error);
