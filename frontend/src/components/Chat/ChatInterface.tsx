@@ -5,9 +5,11 @@ import { useChat } from '../../contexts/ChatContext';
 import MessageList from '../Message/MessageList';
 import MessageInput from '../Message/MessageInput';
 import Sidebar from '../Layout/Sidebar';
+import MobileWarningModal from '../MobileWarning/MobileWarningModal';
 import { apiService } from '../../services/api';
 import { Message } from '../../types';
 import { Files, Download, AlertCircle, Eye, EyeOff, Save, Settings } from 'lucide-react';
+import { shouldShowMobileWarning, isMobileWarningDismissed, dismissMobileWarning } from '../../utils/mobileDetection';
 
 const ChatInterface: React.FC = () => {
   const { user } = useAuth();
@@ -19,8 +21,7 @@ const ChatInterface: React.FC = () => {
     outputFiles, 
     folderName,
     error,
-    addMessage,
-    updateMessage, 
+    addMessage, 
     setUcfMode, 
     setSelectedUcf, 
     setOutputFiles, 
@@ -40,6 +41,9 @@ const ChatInterface: React.FC = () => {
   const [filesVisible, setFilesVisible] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Mobile warning state
+  const [showMobileWarning, setShowMobileWarning] = useState(false);
+
   // Set responsive sidebar behavior
   useEffect(() => {
     const handleResize = () => {
@@ -56,6 +60,19 @@ const ChatInterface: React.FC = () => {
     // Listen for resize events
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Check for mobile device and show warning
+  useEffect(() => {
+    const checkMobileWarning = () => {
+      if (shouldShowMobileWarning() && !isMobileWarningDismissed()) {
+        setShowMobileWarning(true);
+      }
+    };
+
+    // Small delay to ensure page is loaded
+    const timeout = setTimeout(checkMobileWarning, 500);
+    return () => clearTimeout(timeout);
   }, []);
 
   // Initialize with default UCF
@@ -86,8 +103,56 @@ const ChatInterface: React.FC = () => {
     saveSession();
   }, [saveSession]);
 
+  const handleDismissMobileWarning = useCallback(() => {
+    dismissMobileWarning();
+    setShowMobileWarning(false);
+  }, []);
+
+  // Add conversation state
+  const [conversationSessionId, setConversationSessionId] = useState<string | null>(null);
+  const [conversationStage, setConversationStage] = useState<string>('design');
+  const [pendingVerilogCode, setPendingVerilogCode] = useState<string | null>(null);
+  const [userRequirementsSummary, setUserRequirementsSummary] = useState<string>(''); // Store requirements for UCF
+  const [isSending, setIsSending] = useState(false); // Add local sending state
+  const [lastUserMessage, setLastUserMessage] = useState<string>(''); // Track last user message
+
+  // Message limit functionality
+  const MESSAGE_LIMIT = 20;
+  const aiMessageCount = messages.filter(msg => !msg.isUser).length;
+  const hasReachedLimit = aiMessageCount >= MESSAGE_LIMIT;
+  const isInputBlocked = hasReachedLimit || outputFiles.length > 0;
+
+  const handleStartNewSession = useCallback(() => {
+    // Save current session before starting new one
+    if (currentSessionId) {
+      saveSession();
+    }
+    
+    // Reset all conversation state
+    setConversationSessionId(null);
+    setConversationStage('design');
+    setPendingVerilogCode(null);
+    setUserRequirementsSummary('');
+    setOutputFiles([]);
+    setFolderName('');
+    setError(undefined);
+    
+    // Create new session
+    createNewSession();
+  }, [currentSessionId, saveSession, createNewSession, setOutputFiles, setFolderName, setError]);
+
   const sendMessage = useCallback(async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoading || isSending || isInputBlocked) return;
+
+    console.log('sendMessage called - checking for duplicates', { 
+      inputMessage, 
+      isLoading,
+      isSending, 
+      timestamp: Date.now() 
+    });
+
+    // Prevent double submissions and set loading state
+    setIsSending(true);
 
     // Create a new session if we don't have one
     if (!currentSessionId) {
@@ -101,145 +166,205 @@ const ChatInterface: React.FC = () => {
     };
 
     addMessage(userMessage);
+    const messageText = inputMessage; // Store the message before clearing
+    setLastUserMessage(messageText); // Track the last user message for thinking animation
     setInputMessage('');
     setError(undefined);
 
     try {
-      // Step 1: Generate Verilog code with streaming
-      addMessage({
-        text: 'Generating Verilog code for your genetic circuit...',
-        isUser: false,
-        type: 'system'
-      });
-
-      // Step 1: Generate Verilog code
-      const verilogResult = await apiService.generateVerilog(inputMessage);
+      console.log('Starting conversation with:', messageText);
       
-      // Check if there's thinking content and display it
-      if (verilogResult.thinking) {
-        const verilogMessage: Message = {
-          id: generateMessageId(),
-          text: verilogResult.response,
-          isUser: false,
-          type: 'verilog',
-          timestamp: new Date(),
-          thinking: verilogResult.thinking
-        };
-        addMessage(verilogMessage);
-      } else {
+      // Use the new conversational endpoint
+      const conversationResult = await apiService.sendConversationalMessage(
+        messageText, // Use stored message instead of state
+        conversationSessionId || undefined,
+        conversationStage
+      );
+
+      console.log('Conversation result:', conversationResult);
+
+      // Update conversation state
+      setConversationSessionId(conversationResult.session_id);
+      setConversationStage(conversationResult.conversation_stage);
+
+      // Add the AI response with thinking if available
+      const aiMessage: Message = {
+        id: generateMessageId(),
+        text: conversationResult.response,
+        isUser: false,
+        type: conversationResult.needs_approval ? 'approval_request' : 'conversation',
+        timestamp: new Date(),
+        thinking: conversationResult.thinking || undefined,
+        recommendations: conversationResult.recommendations
+      };
+
+      console.log('Adding AI message:', aiMessage);
+      addMessage(aiMessage);
+
+      // If Verilog code was generated, store it for approval
+      if (conversationResult.generated_verilog) {
+        setPendingVerilogCode(conversationResult.generated_verilog);
+        
+        // Store user requirements summary for UCF selection
+        if (conversationResult.user_requirements_summary) {
+          setUserRequirementsSummary(conversationResult.user_requirements_summary);
+        }
+        
+        // Add a message showing the generated Verilog
         addMessage({
-          text: verilogResult.response,
+          text: conversationResult.generated_verilog,
           isUser: false,
           type: 'verilog'
         });
+
+        // Add approval buttons
+        addMessage({
+          text: 'Do you approve this design? Click "Approve" to proceed with UCF selection and Cello processing, or "Refine" to make modifications.',
+          isUser: false,
+          type: 'approval_buttons'
+        });
       }
 
-      // Continue with UCF selection and Cello processing
-      continueWithProcessing(verilogResult.response);
-
-      async function continueWithProcessing(verilogResponse: string) {
-        try {
-          // Extract Verilog module
-          const verilogCode = apiService.extractVerilogModule(verilogResponse);
-          if (!verilogCode) {
-            console.log(verilogResponse);
-            throw new Error('No valid Verilog module found in the response');
-          }
-
-          // Step 2: UCF Selection
-          let selectedUcfForProcessing = ucfMode.selectedUcf;
-          
-          if (ucfMode.mode === 'auto') {
-            addMessage({
-              text: 'Automatically selecting optimal UCF based on your design...',
-              isUser: false,
-              type: 'system'
-            });
-
-            const ucfName = await apiService.selectUcf(inputMessage);
-            const autoSelectedUcf = ucfOptions.find(ucf => 
-              ucf.name.toLowerCase() === ucfName.toLowerCase()
-            );
-            
-            if (autoSelectedUcf) {
-              selectedUcfForProcessing = autoSelectedUcf;
-              setSelectedUcf(autoSelectedUcf);
-            }
-
-            addMessage({
-              text: `Selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
-              isUser: false,
-              type: 'ucf_selection'
-            });
-          } else {
-            addMessage({
-              text: `Using manually selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
-              isUser: false,
-              type: 'ucf_selection'
-            });
-          }
-
-          // Step 3: Cello Processing
-          addMessage({
-            text: 'Processing with Cello to generate genetic circuit design...',
-            isUser: false,
-            type: 'system'
-          });
-
-          const celloResult = await apiService.processCello(
-            verilogCode, 
-            selectedUcfForProcessing?.id || 1
-          );
-          
-          setOutputFiles(celloResult.output_files || []);
-          setFolderName(celloResult.folder_name || '');
-
-          addMessage({
-            text: `✅ Cello processing completed successfully!\n\nGenerated ${celloResult.output_files?.length || 0} output files:\n${(celloResult.output_files || []).map(file => `• ${file}`).join('\n')}\n\nFolder: ${celloResult.folder_name}`,
-            isUser: false,
-            type: 'system'
-          });
-
-          // Save session after completing the full workflow
-          setTimeout(() => {
-            saveSession();
-          }, 500); // Small delay to ensure all messages are processed
-
-        } catch (error: any) {
-          console.error('Error in processing workflow:', error);
-          setError(error.message);
-          addMessage({
-            text: `❌ Error: ${error.message}`,
-            isUser: false,
-            type: 'error'
-          });
-        }
-      }
+      // Save session after each interaction
+      setTimeout(() => {
+        saveSession();
+      }, 500);
 
     } catch (error: any) {
-      console.error('Error in chat flow:', error);
+      console.error('Error in conversation:', error);
       setError(error.message);
       addMessage({
         text: `❌ Error: ${error.message}`,
         isUser: false,
         type: 'error'
       });
+    } finally {
+      // Reset sending state and clear last user message
+      setIsSending(false);
+      setLastUserMessage('');
     }
   }, [
     inputMessage, 
-    isLoading, 
+    isLoading,
+    isSending,
+    isInputBlocked,
     currentSessionId,
-    ucfMode, 
-    ucfOptions, 
+    conversationSessionId,
+    conversationStage,
     addMessage,
-    updateMessage, 
-    setSelectedUcf, 
-    setOutputFiles, 
-    setFolderName, 
     setError,
     createNewSession,
     saveSession,
     generateMessageId
+  ]);
+
+  // Handle approval/refinement actions
+  const handleApproval = useCallback(async (approved: boolean) => {
+    if (approved && pendingVerilogCode) {
+      // User approved the design, proceed with processing
+      try {
+        // Step 1: UCF Selection
+        let selectedUcfForProcessing = ucfMode.selectedUcf;
+        
+        if (ucfMode.mode === 'auto') {
+          addMessage({
+            text: 'Automatically selecting optimal UCF based on your design requirements...',
+            isUser: false,
+            type: 'system'
+          });
+
+          // Use user requirements summary instead of Verilog code for UCF selection
+          const ucfSelectionInput = userRequirementsSummary || 
+            `User requested: ${lastUserMessage}. Generated Verilog module with appropriate logic.`;
+          
+          console.log('UCF selection input:', ucfSelectionInput);
+          
+          const ucfName = await apiService.selectUcf(ucfSelectionInput);
+          const autoSelectedUcf = ucfOptions.find(ucf => 
+            ucf.name.toLowerCase() === ucfName.toLowerCase()
+          );
+          
+          if (autoSelectedUcf) {
+            selectedUcfForProcessing = autoSelectedUcf;
+            setSelectedUcf(autoSelectedUcf);
+          }
+
+          addMessage({
+            text: `Selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
+            isUser: false,
+            type: 'ucf_selection'
+          });
+        } else {
+          addMessage({
+            text: `Using manually selected UCF: ${selectedUcfForProcessing?.name || 'Eco1C1G1T1'}`,
+            isUser: false,
+            type: 'ucf_selection'
+          });
+        }
+
+        // Step 2: Cello Processing
+        addMessage({
+          text: 'Processing with Cello to generate genetic circuit design...',
+          isUser: false,
+          type: 'system'
+        });
+
+        const celloResult = await apiService.processCello(
+          pendingVerilogCode, 
+          selectedUcfForProcessing?.id || 1
+        );
+        
+        setOutputFiles(celloResult.output_files || []);
+        setFolderName(celloResult.folder_name || '');
+
+        addMessage({
+          text: `Cello processing completed successfully!\n\nGenerated ${celloResult.output_files?.length || 0} output files:\n${(celloResult.output_files || []).map(file => `• ${file}`).join('\n')}\n\nFolder: ${celloResult.folder_name}`,
+          isUser: false,
+          type: 'system'
+        });
+
+        // Reset conversation state
+        setPendingVerilogCode(null);
+        setUserRequirementsSummary('');
+        setConversationStage('design');
+
+        // Save session
+        setTimeout(() => {
+          saveSession();
+        }, 500);
+
+      } catch (error: any) {
+        console.error('Error in processing workflow:', error);
+        setError(error.message);
+        addMessage({
+          text: `Error: ${error.message}`,
+          isUser: false,
+          type: 'error'
+        });
+      }
+    } else {
+      // User wants to refine the design
+      setPendingVerilogCode(null);
+      setUserRequirementsSummary('');
+      setConversationStage('refinement');
+      addMessage({
+        text: 'I understand you\'d like to refine the design. Please tell me what changes you\'d like to make or what aspects you\'d like to improve.',
+        isUser: false,
+        type: 'conversation'
+      });
+    }
+  }, [
+    pendingVerilogCode,
+    userRequirementsSummary,
+    lastUserMessage,
+    ucfMode, 
+    ucfOptions, 
+    addMessage,
+    setSelectedUcf, 
+    setOutputFiles, 
+    setFolderName, 
+    setError,
+    saveSession
   ]);
 
   const downloadFile = useCallback(async (fileName: string) => {
@@ -266,7 +391,23 @@ const ChatInterface: React.FC = () => {
   }, [folderName, addMessage]);
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-gray-50">
+    <div className="h-screen flex flex-col md:flex-row bg-gray-50 relative">
+      {/* Mobile Warning Modal */}
+      <MobileWarningModal
+        isVisible={showMobileWarning}
+        onDismiss={handleDismissMobileWarning}
+      />
+
+      {/* Global Loading Overlay */}
+      {(isLoading || isSending) && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-blue-500 bg-opacity-5 z-30 pointer-events-none"
+        />
+      )}
+
       {/* Loading Session Overlay */}
       {isLoadingSession && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -291,7 +432,14 @@ const ChatInterface: React.FC = () => {
             </svg>
           </button>
           <div className="text-center flex-1">
-            <h1 className="text-lg font-semibold text-gray-900">CELLM</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-lg font-semibold text-gray-900">CELLM</h1>
+              {(isLoading || isSending) && (
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 border border-blue-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {error && <AlertCircle className="w-5 h-5 text-red-600" />}
@@ -330,11 +478,22 @@ const ChatInterface: React.FC = () => {
         <div className="hidden md:block bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg lg:text-xl font-semibold text-gray-900 truncate">
-                CELLM - Genetic Circuit Designer
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg lg:text-xl font-semibold text-gray-900 truncate">
+                  CELLM - Genetic Circuit Designer
+                </h1>
+                {(isLoading || isSending) && (
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <div className="w-4 h-4 border border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm font-medium">Processing...</span>
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-gray-500 hidden lg:block">
-                Design genetic circuits with AI-powered Verilog generation
+                {(isLoading || isSending) 
+                  ? "AI is generating your Verilog code..." 
+                  : "Design genetic circuits with AI-powered Verilog generation"
+                }
               </p>
             </div>
             
@@ -420,10 +579,50 @@ const ChatInterface: React.FC = () => {
           )}
         </div>
 
+        {/* Chat Status Banner */}
+        {isInputBlocked && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-3 md:mx-6 mt-4 p-3 md:p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">!</span>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {aiMessageCount >= MESSAGE_LIMIT 
+                      ? "Chat Limit Reached" 
+                      : "Processing Complete"
+                    }
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {aiMessageCount >= MESSAGE_LIMIT 
+                      ? `You've reached the maximum of ${MESSAGE_LIMIT} AI responses for this chat session.`
+                      : "Files have been generated successfully. Start a new chat to design another circuit."
+                    }
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleStartNewSession}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
+              >
+                Start New Chat
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Messages */}
         <MessageList 
           messages={messages} 
-          isLoading={isLoading}
+          isLoading={isLoading || isSending}
+          conversationStage={conversationStage}
+          lastUserMessage={lastUserMessage}
+          onApproval={handleApproval}
         />
 
         {/* Output Files Panel */}
@@ -483,12 +682,16 @@ const ChatInterface: React.FC = () => {
           inputValue={inputMessage}
           onChange={handleInputChange}
           onSend={sendMessage}
-          isLoading={isLoading}
+          isLoading={isLoading || isSending}
           ucfMode={ucfMode.mode}
           onUcfModeChange={(mode) => setUcfMode(mode)}
           selectedUcf={ucfMode.selectedUcf}
           onUcfSelect={setSelectedUcf}
           ucfOptions={ucfOptions}
+          isInputBlocked={isInputBlocked}
+          aiMessageCount={aiMessageCount}
+          messageLimit={MESSAGE_LIMIT}
+          onStartNewSession={handleStartNewSession}
         />
       </div>
     </div>

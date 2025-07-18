@@ -16,7 +16,8 @@ export interface Message {
   timestamp: Date;
   thinking?: string; // For model thinking process
   isTyping?: boolean;
-  type?: 'text' | 'verilog' | 'ucf_selection' | 'system' | 'error';
+  type?: 'text' | 'verilog' | 'ucf_selection' | 'system' | 'error' | 'conversation' | 'approval_request' | 'approval_buttons';
+  recommendations?: string[]; // Design recommendations from AI
 }
 
 export interface UCFOption {

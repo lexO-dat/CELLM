@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Bot, ChevronDown, ChevronUp, Clock, Code, Cpu, MessageSquare } from "lucide-react";
+import { User, Bot, ChevronDown, ChevronUp, Clock, Code, Cpu, MessageSquare, CheckCircle, XCircle, Lightbulb, Copy, Check } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -8,11 +8,13 @@ import { Message as MessageType } from "../../types";
 
 interface MessageProps {
     message: MessageType;
+    onApproval?: (approved: boolean) => void;
 }
 
-const Message: React.FC<MessageProps> = ({ message }) => {
+const Message: React.FC<MessageProps> = ({ message, onApproval }) => {
     const [showThinking, setShowThinking] = useState(false);
-    const { text, isUser, thinking, type, timestamp } = message;
+    const [copied, setCopied] = useState(false);
+    const { text, isUser, thinking, type, timestamp, recommendations } = message;
 
     const formatTime = (date: Date) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -20,6 +22,16 @@ const Message: React.FC<MessageProps> = ({ message }) => {
             minute: '2-digit',
             hour12: true
         }).format(date);
+    };
+
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
     };
 
     const getMessageIcon = () => {
@@ -32,6 +44,11 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                 return <Cpu className="w-5 h-5" />;
             case 'system':
                 return <Clock className="w-5 h-5" />;
+            case 'conversation':
+            case 'approval_request':
+                return <MessageSquare className="w-5 h-5" />;
+            case 'approval_buttons':
+                return <CheckCircle className="w-5 h-5" />;
             default:
                 return <Bot className="w-5 h-5" />;
         }
@@ -49,6 +66,11 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                 return 'bg-yellow-500';
             case 'error':
                 return 'bg-red-500';
+            case 'conversation':
+            case 'approval_request':
+                return 'bg-indigo-500';
+            case 'approval_buttons':
+                return 'bg-orange-500';
             default:
                 return 'bg-gray-500';
         }
@@ -97,6 +119,19 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                     <span className="text-xs text-gray-400 hidden sm:inline">
                         {formatTime(timestamp)}
                     </span>
+                    
+                    {/* Copy Button */}
+                    <button
+                        onClick={copyToClipboard}
+                        className="ml-auto p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Copy message"
+                    >
+                        {copied ? (
+                            <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                        ) : (
+                            <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
+                    </button>
                 </div>
 
                 {/* Model Thinking Section */}
@@ -133,24 +168,27 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                     </motion.div>
                 )}
 
-                {/* Model Response Section */}
-                {!isUser && type === 'verilog' && text && (
+                {/* Recommendations Section */}
+                {recommendations && recommendations.length > 0 && !isUser && (
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         className="mb-3"
                     >
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 mb-2">
-                            <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span>Model Response</span>
+                            <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>Design Recommendations</span>
                         </div>
                         
-                        <div className="p-2 sm:p-3 bg-blue-50 rounded-lg border-l-4 border-blue-300">
-                            <div className="text-xs sm:text-sm text-gray-700 prose prose-sm max-w-none">
-                                <ReactMarkdown components={components}>
-                                    {text}
-                                </ReactMarkdown>
-                            </div>
+                        <div className="p-2 sm:p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-300">
+                            <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
+                                {recommendations.map((rec, index) => (
+                                    <li key={index} className="flex items-start gap-2">
+                                        <span className="text-yellow-600 mt-0.5">•</span>
+                                        <span>{rec}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </motion.div>
                 )}
@@ -163,19 +201,43 @@ const Message: React.FC<MessageProps> = ({ message }) => {
                             : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md'
                     }`}
                 >
-                    {type === 'verilog' && !isUser ? (
+                    {type === 'approval_buttons' && !isUser && onApproval ? (
+                        <div className="space-y-3">
+                            <div className="text-sm sm:text-base">{text}</div>
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={() => onApproval(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Approve & Process</span>
+                                </button>
+                                <button
+                                    onClick={() => onApproval(false)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                    <span>Refine Design</span>
+                                </button>
+                            </div>
+                        </div>
+                    ) : type === 'verilog' && !isUser ? (
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-xs sm:text-sm opacity-75">
                                 <Code className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span>Verilog Generation Complete</span>
+                                <span>Generated Verilog Code</span>
                             </div>
-                            <div className="text-xs sm:text-sm text-gray-600">
-                                {thinking ? 'Model thinking and detailed response available above.' : 'Response generated successfully.'}
+                            <div className="bg-gray-900 rounded-lg p-3 overflow-x-auto">
+                                <pre className="text-green-400 text-xs sm:text-sm font-mono whitespace-pre-wrap">
+                                    {text}
+                                </pre>
                             </div>
                         </div>
                     ) : (
-                        <div className="whitespace-pre-wrap text-sm sm:text-base">
-                            {text}
+                        <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown components={components}>
+                                {text}
+                            </ReactMarkdown>
                         </div>
                     )}
                 </div>

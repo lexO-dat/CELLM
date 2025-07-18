@@ -1,7 +1,11 @@
 import { ApiResponse } from '../types';
 
-const API_BASE_URL = 'http://134.199.140.227:8088'; // LLM Gateway
-const CELLO_API_URL = 'http://134.199.140.227:8000'; // Cello API
+const API_BASE_URL = 'https://134.199.140.227/llm'; // LLM Gateway
+const CELLO_API_URL = 'https://134.199.140.227/cello'; // Cello API
+
+//development:
+// const API_BASE_URL = 'http://localhost:8088'; // LLM Gateway
+// const CELLO_API_URL = 'http://localhost:8000'; // Cello API
 
 class ApiService {
   // UCF Selection
@@ -27,7 +31,78 @@ class ApiService {
     }
   }
 
-  // Verilog Generation
+  // Conversational Chat Interface
+  async sendConversationalMessage(
+    message: string, 
+    sessionId?: string, 
+    conversationStage: string = 'design'
+  ): Promise<{
+    response: string;
+    thinking?: string;
+    conversation_stage: string;
+    session_id: string;
+    needs_approval: boolean;
+    generated_verilog?: string;
+    recommendations: string[];
+    user_requirements_summary?: string;
+  }> {
+    try {
+      console.log('Sending conversational message:', { message, sessionId, conversationStage });
+      
+      const response = await fetch(`${API_BASE_URL}/v1/models/conversation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: message,
+          session_id: sessionId,
+          conversation_stage: conversationStage
+        }),
+      });
+
+      console.log('Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Conversation API error: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('API Response data:', data);
+      
+      const result = {
+        response: data.response || '',
+        thinking: data.thinking || '',
+        conversation_stage: data.conversation_stage || 'design',
+        session_id: data.session_id,
+        needs_approval: data.needs_approval || false,
+        generated_verilog: data.generated_verilog || '',
+        recommendations: data.recommendations || [],
+        user_requirements_summary: data.user_requirements_summary || ''
+      };
+      
+      console.log('Processed result:', result);
+      return result;
+    } catch (error) {
+      console.error('Error in conversation:', error);
+      throw new Error('Failed to process conversation. Please try again.');
+    }
+  }
+
+  // Clear conversation session
+  async clearConversation(sessionId: string): Promise<void> {
+    try {
+      await fetch(`${API_BASE_URL}/v1/models/conversation/${sessionId}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      console.error('Error clearing conversation:', error);
+    }
+  }
+
+  // Verilog Generation (Legacy - for backwards compatibility)
   async generateVerilog(prompt: string): Promise<{ response: string; thinking?: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/v1/models/verilog`, {
@@ -188,3 +263,4 @@ class ApiService {
 
 export const apiService = new ApiService();
 export default apiService;
+

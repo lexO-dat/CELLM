@@ -13,6 +13,10 @@ interface MessageInputProps {
   selectedUcf?: UCFOption;
   onUcfSelect: (ucf: UCFOption) => void;
   ucfOptions: UCFOption[];
+  isInputBlocked?: boolean;
+  aiMessageCount?: number;
+  messageLimit?: number;
+  onStartNewSession?: () => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({ 
@@ -24,7 +28,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
   onUcfModeChange,
   selectedUcf,
   onUcfSelect,
-  ucfOptions
+  ucfOptions,
+  isInputBlocked = false,
+  aiMessageCount = 0,
+  messageLimit = 20,
+  onStartNewSession
 }) => {
   const [showUcfSettings, setShowUcfSettings] = useState(false);
   const [showUcfOptions, setShowUcfOptions] = useState(false);
@@ -173,29 +181,64 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 value={inputValue}
                 onChange={(e) => onChange(e as any)}
                 onKeyPress={handleKeyPress}
-                placeholder="Describe your genetic circuit design..."
-                className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none text-sm md:text-base"
+                placeholder={
+                  isInputBlocked 
+                    ? aiMessageCount >= messageLimit 
+                      ? `Chat limit reached (${aiMessageCount}/${messageLimit} AI responses)` 
+                      : "Files have been generated. Start a new chat to continue designing."
+                    : isLoading 
+                      ? "AI is generating your Verilog code..." 
+                      : "Describe your genetic circuit design..."
+                }
+                className={`w-full px-3 md:px-4 py-2 md:py-3 border rounded-lg focus:ring-2 transition-colors resize-none text-sm md:text-base ${
+                  isLoading || isInputBlocked
+                    ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed focus:ring-gray-300 focus:border-gray-300' 
+                    : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                }`}
                 rows={Math.min(Math.max(inputValue.split('\n').length, 1), 4)}
                 maxLength={1000}
-                disabled={isLoading}
-              />
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-gray-500">
-                  {inputValue.length}/1000
-                </span>
-                <div className="flex items-center gap-2">
-                  {ucfMode === 'manual' && selectedUcf && (
-                    <span className="text-xs text-gray-500 hidden sm:inline">
-                      Using: {selectedUcf.name}
+                disabled={isLoading || isInputBlocked}
+              />            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2">
+                {isInputBlocked ? (
+                  <div className="flex items-center gap-2 text-xs text-orange-600">
+                    <span>📝 {aiMessageCount}/{messageLimit} AI responses</span>
+                    {onStartNewSession && (
+                      <button
+                        onClick={onStartNewSession}
+                        className="text-blue-600 hover:text-blue-800 underline font-medium"
+                      >
+                        Start New Chat
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-xs text-gray-500">
+                      {inputValue.length}/1000
                     </span>
-                  )}
-                  {ucfMode === 'auto' && (
-                    <span className="text-xs text-gray-500 hidden sm:inline">
-                      Auto UCF selection
-                    </span>
-                  )}
-                </div>
+                    {isLoading && (
+                      <div className="flex items-center gap-1 text-xs text-blue-600">
+                        <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <span>AI thinking...</span>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
+              <div className="flex items-center gap-2">
+                {ucfMode === 'manual' && selectedUcf && (
+                  <span className="text-xs text-gray-500 hidden sm:inline">
+                    Using: {selectedUcf.name}
+                  </span>
+                )}
+                {ucfMode === 'auto' && (
+                  <span className="text-xs text-gray-500 hidden sm:inline">
+                    Auto UCF selection
+                  </span>
+                )}
+              </div>
+            </div>
             </div>
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -213,17 +256,36 @@ const MessageInput: React.FC<MessageInputProps> = ({
               </button>
               
               <button
-                onClick={onSend}
-                disabled={isLoading || !inputValue.trim()}
-                className="flex-1 sm:flex-none p-2 md:p-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg transition-colors flex items-center justify-center"
-                title="Send Message"
+                onClick={isInputBlocked && onStartNewSession ? onStartNewSession : onSend}
+                disabled={(isLoading || !inputValue.trim()) && !isInputBlocked}
+                className={`flex-1 sm:flex-none p-2 md:p-3 ${
+                  isInputBlocked
+                    ? 'bg-green-500 hover:bg-green-600'
+                    : isLoading 
+                      ? 'bg-blue-400 cursor-not-allowed' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                } disabled:bg-blue-300 text-white rounded-lg transition-colors flex items-center justify-center min-w-[60px]`}
+                title={
+                  isInputBlocked
+                    ? "Start new chat session"
+                    : isLoading 
+                      ? "Generating response..." 
+                      : "Send Message"
+                }
               >
-                {isLoading ? (
-                  <div className="w-4 md:w-5 h-4 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {isInputBlocked ? (
+                  <span className="text-xs font-medium">New Chat</span>
+                ) : isLoading ? (
+                  <div className="relative">
+                    <div className="w-4 md:w-5 h-4 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="absolute inset-0 w-4 md:w-5 h-4 md:h-5 border border-white border-opacity-30 rounded-full animate-pulse" />
+                  </div>
                 ) : (
                   <Send className="w-4 md:w-5 h-4 md:h-5" />
                 )}
-                <span className="sr-only">Send</span>
+                <span className="sr-only">
+                  {isInputBlocked ? "Start new chat" : isLoading ? "Generating response..." : "Send"}
+                </span>
               </button>
             </div>
           </div>

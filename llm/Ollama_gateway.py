@@ -12,8 +12,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-from typing import Dict
+from typing import Dict, Optional, List
 import re
+import time
+import random
 
 # Import the llm configuration and LLM manager
 from config import Config
@@ -293,6 +295,250 @@ def verilog_interactive():
             break
         except Exception as e:
             print(f"Error: {str(e)}")
+
+# Conversation Memory Storage
+conversation_memories = {}
+
+def extract_user_requirements(conversation_history: str, current_message: str) -> str:
+    """
+    Extract user requirements from conversation for UCF selection.
+    Returns a summary of complexity, organism, sensors, outputs, etc.
+    """
+    try:
+        # Combine conversation history and current message
+        full_context = f"{conversation_history}\nCurrent request: {current_message}"
+        
+        # Create extraction prompt
+        extraction_prompt = f"""
+Analyze the following user conversation about genetic circuit design and extract key requirements for UCF (User Constraint File) selection.
+
+Extract ONLY the information explicitly mentioned by the user:
+
+**Circuit Requirements:**
+{full_context}
+
+**Extract and summarize:**
+1. **Circuit Complexity**: Simple (1-2 gates), Medium (3-4 gates), Complex (5+ gates)
+2. **Target Organism**: E. coli, B. subtilis, S. cerevisiae, or any specific organism mentioned
+3. **Input Sensors**: Any specific sensors mentioned (IPTG, aTc, arabinose, etc.)
+4. **Output Reporters**: Any reporters mentioned (GFP, RFP, luciferase, etc.)
+5. **Logic Type**: AND, OR, NOT, NAND, NOR, XOR, or complex combinations
+6. **Special Requirements**: Temperature, media, growth conditions, etc.
+
+**Format your response as a concise summary:**
+"Circuit: [logic type] gate(s), Complexity: [simple/medium/complex], Organism: [if mentioned], Inputs: [if mentioned], Outputs: [if mentioned], Special: [any special requirements]"
+
+If information is not mentioned, omit that field. Keep the summary concise and focused on UCF selection criteria.
+"""
+
+        # Use the same LLM as Verilog generation for consistency
+        if config.VERILOG_PROVIDER == "api":
+            summary = verilog_llm.invoke(extraction_prompt)
+        else:
+            # For local models, use a simple extraction
+            summary = f"Circuit requirements from user: {current_message}"
+        
+        return summary if isinstance(summary, str) else str(summary)
+        
+    except Exception as e:
+        print(f"Requirements extraction error: {e}")
+        return f"User requested: {current_message}"
+
+class ConversationRequest(BaseModel):
+    question: str
+    session_id: str = None
+    conversation_stage: str = "design"  # design, refinement, approval, processing
+
+class ConversationResponse(BaseModel):
+    response: str
+    thinking: Optional[str] = ""
+    conversation_stage: str
+    session_id: str
+    needs_approval: bool = False
+    generated_verilog: Optional[str] = ""
+    recommendations: List[str] = []
+    user_requirements_summary: Optional[str] = ""  # Add requirements summary for UCF selection
+
+@app.post("/v1/models/conversation", response_model=ConversationResponse)
+async def conversation_endpoint(request: ConversationRequest) -> Dict[str, str]:
+    """
+    New conversational endpoint that maintains chat memory and guides users through
+    the entire design process with recommendations and refinements.
+    """
+    try:
+        session_id = request.session_id or f"session_{int(time.time())}_{random.randint(1000, 9999)}"
+        
+        # Initialize or get existing memory for this session
+        if session_id not in conversation_memories:
+            conversation_memories[session_id] = ConversationBufferMemory(
+                memory_key="chat_history",
+                return_messages=True
+            )
+        
+        memory = conversation_memories[session_id]
+        
+        # Enhanced system prompt for direct Verilog generation
+        system_prompt = """You are CELLM, an expert Verilog code generation assistant for genetic circuits. Your primary role is to IMMEDIATELY generate Verilog code based on user requests.
+
+## YOUR APPROACH:
+
+1. **IMMEDIATE CODE GENERATION**: When a user describes a circuit or logic they want, generate the Verilog code right away. Don't ask for additional details unless absolutely necessary.
+
+2. **EXPLAIN YOUR DECISIONS**: After generating code, explain:
+   - Why you chose specific logic implementations
+   - How the circuit works
+   - Any assumptions you made
+   - Potential optimizations or alternatives
+
+3. **ITERATIVE REFINEMENT**: If the user wants changes:
+   - Modify the code based on their feedback
+   - Explain what you changed and why
+   - Keep refining until they approve
+
+4. **CODE STRUCTURE**: Always generate complete, functional Verilog modules with:
+   - Proper module declarations
+   - Clear input/output definitions
+   - Well-commented logic
+   - Proper syntax and formatting
+
+## VERILOG BEST PRACTICES:
+
+- Use descriptive signal names
+- Include comments explaining complex logic
+- Follow standard Verilog coding conventions
+- Generate synthesizable code
+- Consider timing and logic optimization
+
+## EXAMPLE WORKFLOW:
+
+User: "Create an AND gate with two inputs"
+You: Generate Verilog code immediately, then explain the implementation
+
+User: "Make it a 3-input AND gate instead"
+You: Modify the code and explain the changes
+
+User: "Perfect, I approve this design"
+You: Confirm approval and indicate readiness for UCF selection
+
+## CONVERSATION STAGES:
+
+- **design**: Generate initial Verilog code
+- **refinement**: Modify code based on user feedback  
+- **approval**: User approves the final design
+- **processing**: Move to UCF selection and Cello processing
+
+## KEY PRINCIPLE:
+Be direct and action-oriented. Generate code first, ask questions later only if truly needed.
+
+Current conversation stage: {stage}
+"""
+
+        # Get conversation history
+        chat_history = memory.chat_memory.messages if hasattr(memory, 'chat_memory') else []
+        
+        # Format conversation history for the prompt
+        history_text = ""
+        for msg in chat_history:
+            role = "User" if hasattr(msg, 'type') and msg.type == "human" else "Assistant"
+            content = msg.content if hasattr(msg, 'content') else str(msg)
+            history_text += f"{role}: {content}\n"
+        
+        # Add context about conversation stage
+        context_prompt = f"""
+{system_prompt.format(stage=request.conversation_stage)}
+
+Previous conversation:
+{history_text}
+
+User message: {request.question}
+
+Please respond naturally and guide the conversation appropriately. If this is the first message, introduce yourself and ask about their design requirements.
+"""
+
+        # Check if we're using API or local model and handle accordingly
+        if config.VERILOG_PROVIDER == "api":
+            # For API models (DeepSeek), use direct invocation
+            response = verilog_llm.invoke(context_prompt)
+        else:
+            # For local models, use conversation chain
+            conversation_chain = ConversationChain(
+                llm=verilog_llm,
+                memory=memory,
+                verbose=True
+            )
+            response = conversation_chain.predict(input=context_prompt)
+        
+        # Save the conversation in memory manually for API models
+        if config.VERILOG_PROVIDER == "api":
+            from langchain.schema import HumanMessage, AIMessage
+            memory.chat_memory.add_message(HumanMessage(content=request.question))
+            memory.chat_memory.add_message(AIMessage(content=response))
+        
+        # Parse thinking and response
+        thinking_part = ""
+        response_part = response
+        if '</think>' in response:
+            parts = response.split('</think>', 1)
+            thinking_part = parts[0].replace('<think>', '').strip()
+            response_part = parts[1].strip()
+        
+        # Determine next conversation stage and extract information
+        needs_approval = False
+        generated_verilog = None
+        recommendations = []
+        next_stage = request.conversation_stage
+        user_requirements_summary = ""
+        
+        # Check if Verilog code was generated
+        verilog_match = re.search(r'```(?:verilog)?\s*(module.*?endmodule)\s*```', response_part, re.DOTALL | re.IGNORECASE)
+        if verilog_match:
+            generated_verilog = verilog_match.group(1).strip()
+            needs_approval = True
+            next_stage = "approval"
+            
+            # Extract user requirements for UCF selection when Verilog is generated
+            user_requirements_summary = extract_user_requirements(history_text, request.question)
+            print(f"Extracted user requirements for UCF: {user_requirements_summary}")
+        
+        # Extract recommendations with improved parsing
+        recommendations = []
+        if "recommend" in response_part.lower() or "suggest" in response_part.lower():
+            # Extract bullet points, numbered lists, and recommendation phrases
+            bullet_matches = re.findall(r'[•\-\*]\s*(.+?)(?=\n[•\-\*]|\n[^•\-\*]|\n\n|$)', response_part, re.MULTILINE)
+            number_matches = re.findall(r'\d+\.\s*(.+?)(?=\n\d+\.|\n[^\d]|\n\n|$)', response_part, re.MULTILINE)
+            
+            # Extract recommendation phrases
+            rec_phrases = re.findall(r'(?:I recommend|I suggest|Consider|Try|You should|You could|It would be better to)\s+(.+?)(?=\.|!|\?|\n|$)', response_part, re.IGNORECASE)
+            
+            all_recommendations = bullet_matches + number_matches + rec_phrases
+            recommendations = [rec.strip() for rec in all_recommendations if rec.strip() and len(rec.strip()) > 10]
+            
+            # Limit to most relevant recommendations
+            recommendations = recommendations[:5]
+        
+        return {
+            "response": response_part,
+            "thinking": thinking_part or "",
+            "conversation_stage": next_stage,
+            "session_id": session_id,
+            "needs_approval": needs_approval,
+            "generated_verilog": generated_verilog or "",
+            "recommendations": recommendations,
+            "user_requirements_summary": user_requirements_summary
+        }
+        
+    except Exception as e:
+        print(f"Conversation endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Clean up old conversation memories (optional)
+@app.delete("/v1/models/conversation/{session_id}")
+async def clear_conversation(session_id: str):
+    """Clear conversation memory for a session"""
+    if session_id in conversation_memories:
+        del conversation_memories[session_id]
+        return {"message": "Conversation cleared"}
+    return {"message": "Session not found"}
 
 if __name__ == "__main__":
     import sys
