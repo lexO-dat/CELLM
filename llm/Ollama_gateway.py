@@ -545,4 +545,23 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "interactive":
         verilog_interactive()
     else:
-        uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8088, reload=True)
+        # Check if SSL certificates exist for HTTPS
+        ssl_keyfile = os.getenv("SSL_KEYFILE", "/etc/ssl/private/server.key")
+        ssl_certfile = os.getenv("SSL_CERTFILE", "/etc/ssl/certs/server.crt")
+        
+        if os.path.exists(ssl_keyfile) and os.path.exists(ssl_certfile):
+            print(f"Starting server with HTTPS on port 8088")
+            uvicorn.run(
+                "Ollama_gateway:app", 
+                host="0.0.0.0", 
+                port=8088, 
+                reload=True,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile
+            )
+        else:
+            print(f"SSL certificates not found, starting HTTP server on port 8088")
+            print(f"For HTTPS, place certificates at:")
+            print(f"  Key: {ssl_keyfile}")
+            print(f"  Cert: {ssl_certfile}")
+            uvicorn.run("Ollama_gateway:app", host="0.0.0.0", port=8088, reload=True)

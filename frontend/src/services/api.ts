@@ -1,7 +1,8 @@
 import { ApiResponse } from '../types';
 
-const API_BASE_URL = 'https://134.199.140.227/llm'; // LLM Gateway
-const CELLO_API_URL = 'https://134.199.140.227/cello'; // Cello API
+//production:
+const API_BASE_URL = 'https://134.199.140.227/llm'; // LLM Gateway with reverse proxy
+const CELLO_API_URL = 'https://134.199.140.227/cello'; // Cello API with reverse proxy
 
 //development:
 // const API_BASE_URL = 'http://localhost:8088'; // LLM Gateway
@@ -47,12 +48,14 @@ class ApiService {
     user_requirements_summary?: string;
   }> {
     try {
-      console.log('Sending conversational message:', { message, sessionId, conversationStage });
+      //console.log('Sending conversational message:', { message, sessionId, conversationStage });
+      //console.log('API URL:', `${API_BASE_URL}/v1/models/conversation`);
       
       const response = await fetch(`${API_BASE_URL}/v1/models/conversation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           question: message,
@@ -61,33 +64,32 @@ class ApiService {
         }),
       });
 
-      console.log('Response status:', response.status, response.statusText);
+      //console.log('API Response status:', response.status, response.statusText);
+      //console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`Conversation API error: ${response.statusText} - ${errorText}`);
+        console.error('API Error response:', errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
-      console.log('API Response data:', data);
-      
-      const result = {
-        response: data.response || '',
-        thinking: data.thinking || '',
-        conversation_stage: data.conversation_stage || 'design',
-        session_id: data.session_id,
-        needs_approval: data.needs_approval || false,
-        generated_verilog: data.generated_verilog || '',
-        recommendations: data.recommendations || [],
-        user_requirements_summary: data.user_requirements_summary || ''
-      };
-      
-      console.log('Processed result:', result);
+      const result = await response.json();
+      //console.log('Conversation result:', result);
       return result;
     } catch (error) {
       console.error('Error in conversation:', error);
-      throw new Error('Failed to process conversation. Please try again.');
+      
+      // Enhanced error handling for different types of network errors
+      if (error instanceof TypeError) {
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Network error: Unable to connect to the server. This might be due to CORS policy, SSL certificate issues, or the server being unreachable.');
+        }
+        if (error.message.includes('NetworkError')) {
+          throw new Error('Network error: Please check your internet connection and try again.');
+        }
+      }
+      
+      throw new Error(`Failed to process conversation: ${error.message}`);
     }
   }
 
@@ -217,16 +219,78 @@ class ApiService {
     }
   }
 
-  // Health Check
+  // Health Check with enhanced debugging
   async healthCheck(): Promise<boolean> {
     try {
+      console.log('Testing connection to:', `${API_BASE_URL}/v1/models/health`);
+      
       const response = await fetch(`${API_BASE_URL}/v1/models/health`, {
         method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
       });
-      return response.ok;
+      
+      console.log('Health check response:', response.status, response.statusText);
+      console.log('Health check headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Health check data:', data);
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Health check failed:', error);
       return false;
+    }
+  }
+
+  // Test CORS and connectivity
+  async testConnection(): Promise<{success: boolean, message: string, details?: any}> {
+    try {
+      console.log('=== Connection Test Started ===');
+      console.log('Testing API Base URL:', API_BASE_URL);
+      console.log('Testing Cello URL:', CELLO_API_URL);
+      
+      // Test health endpoint
+      const healthResponse = await fetch(`${API_BASE_URL}/v1/models/health`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (healthResponse.ok) {
+        const healthData = await healthResponse.json();
+        return {
+          success: true,
+          message: 'Connection successful!',
+          details: {
+            status: healthResponse.status,
+            data: healthData,
+            headers: Object.fromEntries(healthResponse.headers.entries())
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: `Health check failed: ${healthResponse.status} ${healthResponse.statusText}`,
+          details: {
+            status: healthResponse.status,
+            statusText: healthResponse.statusText,
+            headers: Object.fromEntries(healthResponse.headers.entries())
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Connection test error:', error);
+      return {
+        success: false,
+        message: `Connection failed: ${error.message}`,
+        details: { error: error.toString() }
+      };
     }
   }
 

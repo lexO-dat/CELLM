@@ -40,6 +40,24 @@ const ChatInterface: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [filesVisible, setFilesVisible] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{
+    tested: boolean;
+    success: boolean;
+    message: string;
+    details?: any;
+  }>({ tested: false, success: false, message: '' });
+
+  // Test API connection
+  const testApiConnection = useCallback(async () => {
+    console.log('Testing API connection...');
+    const result = await apiService.testConnection();
+    setConnectionStatus({
+      tested: true,
+      success: result.success,
+      message: result.message,
+      details: result.details
+    });
+  }, []);
 
   // Mobile warning state
   const [showMobileWarning, setShowMobileWarning] = useState(false);
@@ -553,6 +571,36 @@ const ChatInterface: React.FC = () => {
             >
               <h3 className="text-sm font-medium text-gray-900 mb-3">Chat Settings</h3>
               <div className="space-y-3">
+                {/* Connection Test */}
+                <div className="border rounded-lg p-3 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">API Connection</label>
+                    <button
+                      onClick={testApiConnection}
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors"
+                    >
+                      Test Connection
+                    </button>
+                  </div>
+                  {connectionStatus.tested && (
+                    <div className={`text-xs p-2 rounded ${
+                      connectionStatus.success 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      <div className="font-medium">{connectionStatus.message}</div>
+                      {connectionStatus.details && (
+                        <div className="mt-1 font-mono text-xs opacity-75">
+                          Status: {connectionStatus.details.status || 'N/A'}
+                          {connectionStatus.details.error && (
+                            <div>Error: {connectionStatus.details.error}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-gray-700">Auto-save conversations</label>
                   <button
