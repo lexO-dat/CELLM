@@ -8,9 +8,9 @@ Synthetic biology is an interdisciplinary field combining biology, engineering, 
 ## Example 1: 3-input AND gate
 In this first example, a 3-input AND gate was described to \emph{CELLM}. The specific description prompt is: **"Hi, I would like you to design a genetic circuit with three inputs: LacI, AraC, and TetR. The output should be YFP, which is activated only when all three inputs (LacI, AraC, and TetR) are present (i.e., ‘on’)."**.
 
-The full reasoning process: 
-The final response of the model:
-Generated Verilog:
+- The full reasoning process: [reasoning process]()
+- The final response of the model: [model response]()
+- Generated Verilog:
 ``` verilog
 module top(
     input wire AraC,  // Alphabetical ordering
@@ -23,8 +23,74 @@ endmodule
 ```
 
 ## Example 2: The Repressilator
+In this second example, the Repressilator logic was described to CELLM. The prompt given to the system was: **"Hi CELLM. Please produce a single circuit in which a LacI protein (regulated by an Ara promoter) represses a Lac promoter. This Lac promoter regulates a TetR protein that in turn represses a Tet promoter. Finally, this Tet promoter regulates the AraC protein that represses the first Ara promoter."**.
+
+- The full reasoning process: [reasoning process]()
+- The final response of the model: [model response]()
+- Generated Verilog:
+``` verilog
+module top(
+    output wire LacI,      // LacI protein level
+    output wire TetR,      // TetR protein level
+    output wire AraC       // AraC protein level
+);
+    // Internal promoter activity wires
+    wire P_ara_active, P_lac_active, P_tet_active;
+    
+    // Core regulatory logic
+    assign P_ara_active = ~AraC;     // Ara promoter repressed by AraC
+    assign LacI = P_ara_active;      // LacI produced by Ara promoter
+    assign P_lac_active = ~LacI;     // Lac promoter repressed by LacI
+    assign TetR = P_lac_active;      // TetR produced by Lac promoter
+    assign P_tet_active = ~TetR;     // Tet promoter repressed by TetR
+    assign AraC = P_tet_active;      // AraC produced by Tet promoter
+
+endmodule
+```
 ## Example 3: Table-based input combinatory circuit
+
+- The full reasoning process: [reasoning process]()
+- The final response of the model: [model response]()
+Generated Verilog:
+``` verilog
+module top(
+    input wire A,       // Input 1
+    input wire B,       // Input 2
+    input wire C,       // Input 3
+    output wire Y       // Output
+);
+    // Truth table implementation using full case statement
+    always @(*) begin
+        case({A, B, C})
+            3'b000: Y = 1'b0;
+            3'b001: Y = 1'b0;
+            3'b010: Y = 1'b0;
+            3'b011: Y = 1'b1;
+            3'b100: Y = 1'b1;
+            3'b101: Y = 1'b1;
+            3'b110: Y = 1'b0;
+            3'b111: Y = 1'b1;
+            default: Y = 1'b0; // Full coverage guarantee
+        endcase
+    end
+endmodule
+```
 ## Example 4: Verilog-input based multiplexer
+
+- The full reasoning process: [reasoning process]()
+- The final response of the model: [model response]()
+Generated Verilog:
+``` verilog
+module top(
+    input wire A,       // Input A
+    input wire B,       // Input B
+    input wire C,       // Input C (selector)
+    output wire out     // Output
+);
+    // Simplified logic implementation
+    assign out = (C & ~B) | (B & A);
+endmodule
+```
 
 # System requirements:
 - If you want to use exactly the same model i used locally:
