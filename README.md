@@ -1,18 +1,15 @@
 
 # CELLM
-Synthetic biology is an interdisciplinary field that combines biology, engineering and computation to design and build new biological systems or modify existing ones for specific purposes. Within this context, the creation and optimization of genetic circuits are key tasks to advance in the creation of efficient and functional systems.
+This is the code repository for the CELLM paper, CELLM is an AI-powered tool that bridges synthetic biology and natural language processing. It enables the design and analysis of genetic circuits through simple text descriptions by integrating large language models (LLMs), the CELLO synthetic biology framework, and a modular backend.
 
-This project is focused on developing an automated system to analyze and create genetic circuits using tools such as CELLO and artificial intelligence.
+Synthetic biology is an interdisciplinary field combining biology, engineering, and computation to create or modify biological systems for specific purposes. This project aims to automate the creation of genetic circuits by leveraging Verilog code generation, LLMs, and retrieval-augmented UCF selection.
+
+# Examples from the paper
 
 # System requirements:
-- If you want to use exactly the same model i used:
+- If you want to use exactly the same model i used locally:
   -  Minimum: 64Gb RAM, M1 ultra / Intel Core i9-12900K, 100Gb disk
   -  Recommended: 128GB ram, M1 ultra / Intel Core i9-12900K, 100Gb disk
-
-- If you want to run a low parameter model:
-  -  Minimum: 16Gb RAM, Intel core i5-11400h / M1, 40Gb disk
-  -  Recommended: 32Gb RAM, Intel core i5-11400h / M1, 40Gb disk
-
 
 # Prerequisites:
 ## Ollama
@@ -49,12 +46,12 @@ NOTE: this will execute the cello api in 0.0.0.0:8000, to see more further infor
 - nodejs and pnpm installed
 - To install all the dependencies and run the front run the following commands:
 ``` bash
-cd front/chat
-pnpm install
-pnpm run dev
+cd frontend
+npm install
+npm run dev
 ```
 
-NOTE: the frontend is not updated, to use all the system functionalities use the cli.
+NOTE: The frontend is the most updated way to use the system
 
 # Ollama gateway
 
