@@ -8,8 +8,8 @@ Synthetic biology is an interdisciplinary field combining biology, engineering, 
 ## Example 1: 3-input AND gate
 In this first example, a 3-input AND gate was described to \emph{CELLM}. The specific description prompt is: **"Hi, I would like you to design a genetic circuit with three inputs: LacI, AraC, and TetR. The output should be YFP, which is activated only when all three inputs (LacI, AraC, and TetR) are present (i.e., ‘on’)."**.
 
-- The full reasoning process: [reasoning process]()
-- The final response of the model: [model response]()
+- The full reasoning process: [reasoning process](https://github.com/lexO-dat/CELLM/blob/main/Examples/3-input%20AND%20gate/reasoning.txt)
+- The final response of the model: [model response](https://github.com/lexO-dat/CELLM/blob/main/Examples/3-input%20AND%20gate/response.txt)
 - Generated Verilog:
 ``` verilog
 module top(
@@ -25,8 +25,8 @@ endmodule
 ## Example 2: The Repressilator
 In this second example, the Repressilator logic was described to CELLM. The prompt given to the system was: **"Hi CELLM. Please produce a single circuit in which a LacI protein (regulated by an Ara promoter) represses a Lac promoter. This Lac promoter regulates a TetR protein that in turn represses a Tet promoter. Finally, this Tet promoter regulates the AraC protein that represses the first Ara promoter."**.
 
-- The full reasoning process: [reasoning process]()
-- The final response of the model: [model response]()
+- The full reasoning process: [reasoning process](https://github.com/lexO-dat/CELLM/blob/main/Examples/The%20Repressilator/reasoning.txt)
+- The final response of the model: [model response](https://github.com/lexO-dat/CELLM/blob/main/Examples/The%20Repressilator/response.txt)
 - Generated Verilog:
 ``` verilog
 module top(
@@ -48,10 +48,11 @@ module top(
 endmodule
 ```
 ## Example 3: Table-based input combinatory circuit
+For this example the logic table was provided to CELLM with the following prompt: **"I want to create a genetic circuit based on this truth table: \n Inputs  | Outputs | 0  0  0  $->$  0  | 0  0  1  $->$  0 |  0  1  0  $->$  0  | 0  1  1  $->$   1 | 1  0  0  $->$  1  | 1  0  1  $->$  1  |  1  1  0  $->$  0  |  1  1  1  $->$  1"**.
 
-- The full reasoning process: [reasoning process]()
-- The final response of the model: [model response]()
-Generated Verilog:
+- The full reasoning process: [reasoning process](https://github.com/lexO-dat/CELLM/blob/main/Examples/Table-based%20input/reasoning.txt)
+- The final response of the model: [model response](https://github.com/lexO-dat/CELLM/blob/main/Examples/Table-based%20input/response.txt)
+- Generated Verilog:
 ``` verilog
 module top(
     input wire A,       // Input 1
@@ -76,10 +77,28 @@ module top(
 endmodule
 ```
 ## Example 4: Verilog-input based multiplexer
+For this example, we utilized the **multiplexer** Verilog module provided by Cello in their v2.0 paper. The system was prompted with the following request: **"Help me create the circuit for this Verilog module:"**
+``` verilog
+module multiplexer_alt(output out, input A, B, C);
+    always @(C, B, A)
+    begin
+        case({C, B, A})
+            3'b000: {out} = 1'b0;
+            3'b001: {out} = 1'b0;
+            3'b010: {out} = 1'b0;
+            3'b011: {out} = 1'b1;
+            3'b100: {out} = 1'b1;
+            3'b101: {out} = 1'b1;
+            3'b110: {out} = 1'b0;
+            3'b111: {out} = 1'b1;
+        endcase
+    end
+endmodule
+```
 
-- The full reasoning process: [reasoning process]()
-- The final response of the model: [model response]()
-Generated Verilog:
+- The full reasoning process: [reasoning process](https://github.com/lexO-dat/CELLM/blob/main/Examples/Verilog-input%20based%20multiplexer/reasoning.txt)
+- The final response of the model: [model response](https://github.com/lexO-dat/CELLM/blob/main/Examples/Verilog-input%20based%20multiplexer/response.txt)
+- Generated Verilog:
 ``` verilog
 module top(
     input wire A,       // Input A
