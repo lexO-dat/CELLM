@@ -1,0 +1,21 @@
+digraph "top" {
+label="top";
+rankdir="LR";
+remincross=true;
+n4 [ shape=octagon, label="A\nPRIMARY_INPUT\nAraC_sensor", fontcolor="black" ];
+n5 [ shape=octagon, label="B\nPRIMARY_INPUT\nTetR_sensor", fontcolor="black" ];
+n6 [ shape=octagon, label="C\nPRIMARY_INPUT\nLacI_sensor", fontcolor="black" ];
+n7 [ shape=octagon, label="out\nPRIMARY_OUTPUT\nYFP_reporter_3", fontcolor="black" ];
+c9 [ shape=record, label="{{<p4> A}|$54\nNOT\nF1_AmeR|{<p8> Y}}" ];
+c10 [ shape=record, label="{{<p4> A|<p5> B}|$55\nNOR\nI1_IcaRA|{<p8> Y}}" ];
+c11 [ shape=record, label="{{<p4> A|<p5> B}|$56\nNOR\nQ2_QacR|{<p8> Y}}" ];
+c12 [ shape=record, label="{{<p4> A|<p5> B}|$57\nNOR\nP3_PhlF|{<p8> Y}}" ];
+c9:p8:e -> c11:p4:w [color="black", label=""];
+c10:p8:e -> c12:p4:w [color="black", label=""];
+c11:p8:e -> c12:p5:w [color="black", label=""];
+n4:e -> c11:p5:w [color="black", label=""];
+n5:e -> c10:p4:w [color="black", label=""];
+n5:e -> c9:p4:w [color="black", label=""];
+n6:e -> c10:p5:w [color="black", label=""];
+c12:p8:e -> n7:w [color="black", label=""];
+}

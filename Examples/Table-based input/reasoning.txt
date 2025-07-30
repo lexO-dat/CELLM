@@ -1,0 +1,110 @@
+We are given a truth table with 3 inputs and 1 output.
+
+Truth Table:
+Inputs (let's call them A, B, C) | Output (Y)
+0 0 0 | 0
+0 0 1 | 0
+0 1 0 | 0
+0 1 1 | 1
+1 0 0 | 1
+1 0 1 | 1
+1 1 0 | 0
+1 1 1 | 1
+
+We need to design a combinational circuit for this.
+
+Approach:
+1. We can write the boolean expression for Y in terms of A, B, C.
+2. We note the minterms where Y=1: 
+   - 011 (A=0, B=1, C=1) -> m3
+   - 100 (A=1, B=0, C=0) -> m4
+   - 101 (A=1, B=0, C=1) -> m5
+   - 111 (A=1, B=1, C=1) -> m7
+
+So, Y = m3 + m4 + m5 + m7
+
+In terms of A, B, C:
+Y = A'BC + AB'C' + AB'C + ABC
+
+We can simplify this expression using Karnaugh map.
+
+K-map for Y:
+
+AB\C | 0    1
+--------------
+00   | 0    0
+01   | 0    1   (A=0, B=1)
+11   | 0    1   (A=1, B=1)
+10   | 1    1   (A=1, B=0)
+
+Note: The rows are AB: 00, 01, 11, 10.
+
+Grouping:
+- For AB=10 (A=1, B=0), we have Y=1 for both C=0 and C=1 -> so this is A and not B -> A·B'
+- For the two ones in the bottom right (AB=10, C=1 and AB=11, C=1) we can group? Actually, we have:
+  - AB=01, C=1: A'B·C
+  - AB=11, C=1: A·B·C
+  - AB=10, C=0: A·B'·C'
+  - AB=10, C=1: A·B'·C
+
+Alternatively, we can group the two ones in the AB=10 row (C=0 and C=1) as A·B' (which covers m4 and m5).
+Then we have the two ones in the C=1 column for AB=01 and AB=11? But note AB=01 and AB=11 are not adjacent.
+
+Alternatively, we can group:
+  - The two ones in the AB=10 row: A·B'
+  - The two ones in the C=1 column for AB=01 and AB=11: but that is not a rectangle. Instead, we can take the ones at m3, m7 and also m5? 
+
+Actually, we can form:
+  1. A·B' (covering m4 and m5: 100 and 101)
+  2. B·C (covering m3 and m7: 011 and 111)
+
+So, Y = A·B' + B·C
+
+Let's check:
+  m3: A'BC -> covered by B·C? (B·C = BC, which includes A'BC and ABC) -> yes.
+  m4: AB'C' -> covered by A·B'? yes.
+  m5: AB'C -> covered by A·B'? yes.
+  m7: ABC -> covered by B·C? yes.
+
+And the minterms where Y=0 are not included.
+
+Therefore, the simplified expression is: Y = (A & ~B) | (B & C)
+
+We can implement this with two AND gates and one OR gate.
+
+Now, we write the Verilog module.
+
+Module name: top
+Inputs: A, B, C
+Output: Y
+
+We'll use assign statements.
+
+Code:
+
+module top(
+    input wire A,
+    input wire B,
+    input wire C,
+    output wire Y
+);
+    assign Y = (A & ~B) | (B & C);
+endmodule
+
+Alternatively, we could use a case statement, but since we have a simple expression, assign is better.
+
+Let's verify the truth table with the expression:
+
+A B C | (A & ~B) | (B & C)
+0 0 0: (0&1) | (0&0) = 0 | 0 = 0 -> matches
+0 0 1: (0&1) | (0&1) = 0 | 0 = 0 -> matches
+0 1 0: (0&0) | (1&0) = 0 | 0 = 0 -> matches
+0 1 1: (0&0) | (1&1) = 0 | 1 = 1 -> matches
+1 0 0: (1&1) | (0&0) = 1 | 0 = 1 -> matches
+1 0 1: (1&1) | (0&1) = 1 | 0 = 1 -> matches
+1 1 0: (1&0) | (1&0) = 0 | 0 = 0 -> matches
+1 1 1: (1&0) | (1&1) = 0 | 1 = 1 -> matches
+
+Perfect.
+
+Therefore, we generate the Verilog code accordingly.

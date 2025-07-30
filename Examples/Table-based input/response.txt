@@ -1,0 +1,73 @@
+### Verilog Implementation for Truth Table
+Based on your truth table with 3 inputs and 1 output, here's the combinational circuit implementation:
+
+```verilog
+module top(
+    input wire A,       // Input 1
+    input wire B,       // Input 2
+    input wire C,       // Input 3
+    output wire Y       // Output
+);
+    // Truth table implementation using full case statement
+    always @(*) begin
+        case({A, B, C})
+            3'b000: Y = 1'b0;
+            3'b001: Y = 1'b0;
+            3'b010: Y = 1'b0;
+            3'b011: Y = 1'b1;
+            3'b100: Y = 1'b1;
+            3'b101: Y = 1'b1;
+            3'b110: Y = 1'b0;
+            3'b111: Y = 1'b1;
+            default: Y = 1'b0; // Full coverage guarantee
+        endcase
+    end
+endmodule
+```
+
+### Design Explanation:
+1. **Truth Table Compliance**:
+   - Input order preserved: `{A, B, C}` matches your column sequence
+   - Output `Y` strictly follows your specification
+   - All 8 possible input combinations (2³) explicitly covered
+
+2. **Boolean Logic Analysis**:
+   - Karnaugh map reveals the minimal logic expression:
+     ```
+        Y = A·B' + B·C
+     ```
+     - `A·B'`: Active when A=1 AND B=0 (rows 100, 101)
+     - `B·C`: Active when B=1 AND C=1 (rows 011, 111)
+   - Alternative implementation using this simplified logic:
+     ```verilog
+     module top(
+         input wire A, B, C,
+         output wire Y
+     );
+         assign Y = (A & ~B) | (B & C);
+     endmodule
+     ```
+
+3. **Critical Validation**:
+   - No latches: `default` case and full 2³ coverage
+   - No combinational loops
+   - Single-module hierarchy-free design
+
+### Truth Table Verification:
+| A | B | C | Y | 
+|---|---|---|---|
+| 0 | 0 | 0 | 0 ✅ | 
+| 0 | 0 | 1 | 0 ✅ |
+| 0 | 1 | 0 | 0 ✅ |
+| 0 | 1 | 1 | 1 ✅ |
+| 1 | 0 | 0 | 1 ✅ |
+| 1 | 0 | 1 | 1 ✅ |
+| 1 | 1 | 0 | 0 ✅ |
+| 1 | 1 | 1 | 1 ✅ |
+
+### Refinement Options:
+1. **Output Expansion**: Need additional outputs?
+2. **Input Renaming**: Change signal names (e.g., `input1`, `input2`)?
+3. **Logic Optimization**: Prefer the simplified gate implementation?
+
+Would you like to modify any aspect, or should we proceed to approval? 🔍
