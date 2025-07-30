@@ -5,6 +5,26 @@ This is the code repository for the CELLM paper, CELLM is an AI-powered tool tha
 Synthetic biology is an interdisciplinary field combining biology, engineering, and computation to create or modify biological systems for specific purposes. This project aims to automate the creation of genetic circuits by leveraging Verilog code generation, LLMs, and retrieval-augmented UCF selection.
 
 # Examples from the paper
+## Example 1: 3-input AND gate
+In this first example, a 3-input AND gate was described to \emph{CELLM}. The specific description prompt is: **"Hi, I would like you to design a genetic circuit with three inputs: LacI, AraC, and TetR. The output should be YFP, which is activated only when all three inputs (LacI, AraC, and TetR) are present (i.e., ‘on’)."**.
+
+The full reasoning process: 
+The final response of the model:
+Generated Verilog:
+``` verilog
+module top(
+    input wire AraC,  // Alphabetical ordering
+    input wire LacI,
+    input wire TetR,
+    output wire YFP   // Single output
+);
+    assign YFP = AraC & LacI & TetR;  // AND operation
+endmodule
+```
+
+## Example 2: The Repressilator
+## Example 3: Table-based input combinatory circuit
+## Example 4: Verilog-input based multiplexer
 
 # System requirements:
 - If you want to use exactly the same model i used locally:
