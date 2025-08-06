@@ -1,4 +1,3 @@
-
 # CELLM
 This is the code repository for the CELLM paper, CELLM is an AI-powered tool that bridges synthetic biology and natural language processing. It enables the design and analysis of genetic circuits through simple text descriptions by integrating large language models (LLMs), the CELLO synthetic biology framework, and a modular backend.
 
