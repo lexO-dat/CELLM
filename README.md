@@ -110,6 +110,36 @@ module top(
 endmodule
 ```
 
+# UCF TXT Files
+
+We have different UCF uploaded to Supabase in this repository. these ucf were not uploaded in their entirety as they are very extensive, instead, they were summarized so that the llm can identify important characteristics when selecting a ucf.
+
+## Available Files
+
+Below you'll find direct links to the TXT files to view their content:
+
+### UCF 1:
+[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C1G1T1.txt)
+
+### UCF 2:
+[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C2G2T2.txt)
+
+### UCF 3:
+[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C1G3T1.txt)
+
+### UCF 4:
+[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco2C1G5T1.txt)
+
+### UCF 5:
+[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/SC1C1G1T1.txt)
+
+### UCF 6:
+[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/BthC1G1T1.txt)
+
+---
+
+*Files are stored in Supabase so, is not public the access to the database*
+
 # System requirements:
 - If you want to use exactly the same model i used locally:
   -  Minimum: 64Gb RAM, M1 ultra / Intel Core i9-12900K, 100Gb disk
