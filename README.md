@@ -119,22 +119,22 @@ We have different UCF uploaded to Supabase in this repository. these ucf were no
 Below you'll find direct links to the TXT files to view their content:
 
 ### UCF 1:
-[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C1G1T1.txt)
+[Eco1C1G1T1](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C1G1T1.txt)
 
 ### UCF 2:
-[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C2G2T2.txt)
+[Eco1C2G2T2](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C2G2T2.txt)
 
 ### UCF 3:
-[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C1G3T1.txt)
+[Eco1C1G3T1](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco1C1G3T1.txt)
 
 ### UCF 4:
-[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco2C1G5T1.txt)
+[Eco2C1G5T1](https://github.com/lexO-dat/CELLM/blob/main/db_txts/Eco2C1G5T1.txt)
 
 ### UCF 5:
-[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/SC1C1G1T1.txt)
+[SC1C1G1T1](https://github.com/lexO-dat/CELLM/blob/main/db_txts/SC1C1G1T1.txt)
 
 ### UCF 6:
-[reasoning process](https://github.com/lexO-dat/CELLM/blob/main/db_txts/BthC1G1T1.txt)
+[BthC1G1T1](https://github.com/lexO-dat/CELLM/blob/main/db_txts/BthC1G1T1.txt)
 
 ---
 
